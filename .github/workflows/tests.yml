@@ -1,0 +1,32 @@
+name: PR checks
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Run tests
+        run: python -m unittest discover -s tests -v
+      - name: Replay review cases
+        run: python -m agent_eval --suite datasets/smoke/review.json --report artifacts/review.json
+      - name: Replay coding cases
+        run: python -m agent_eval --suite datasets/smoke/coding.json --report artifacts/coding.json
+      - name: Upload evaluation reports
+        if: success() || failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: replay-reports
+          path: artifacts/*.json
+          if-no-files-found: ignore
