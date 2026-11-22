@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -44,3 +45,24 @@ class ReplayCliTests(unittest.TestCase):
 
         self.assertEqual(process.returncode, 2, process.stderr)
         self.assertEqual(report["cases"][0]["metrics"]["review-findings"]["status"], "error")
+
+    def test_rejects_report_paths_that_reference_the_suite(self):
+        suite_contents = Path("datasets/smoke/review.json").read_bytes()
+        for report_name in ("suite.json", "alias.json"):
+            with self.subTest(report=report_name), tempfile.TemporaryDirectory() as directory:
+                suite = Path(directory) / "suite.json"
+                suite.write_bytes(suite_contents)
+                report = suite.with_name(report_name)
+                if report != suite:
+                    os.link(suite, report)
+
+                process = subprocess.run(
+                    [sys.executable, "-m", "agent_eval", "--suite", str(suite), "--report", str(report)],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+
+                self.assertEqual(process.returncode, 2, process.stderr)
+                self.assertIn("Report path refers to the input suite", process.stderr)
+                self.assertEqual(suite.read_bytes(), suite_contents)

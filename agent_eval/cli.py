@@ -75,6 +75,9 @@ def main(argv=None):
 
     if args.report is not None:
         try:
+            if args.report.exists() and args.suite.exists() and args.report.samefile(args.suite):
+                print("Report path refers to the input suite", file=sys.stderr)
+                return 2
             args.report.parent.mkdir(parents=True, exist_ok=True)
             args.report.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
         except OSError as error:
