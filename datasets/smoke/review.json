@@ -1,0 +1,15 @@
+{
+  "metrics": ["review-findings"],
+  "cases": [
+    {
+      "id": "find-dropped-empty-value",
+      "expected": {"review_findings": [["catalog.py", "store", "drops-empty-value"]]},
+      "run": {"review_findings": [["catalog.py", "store", "drops-empty-value"]]}
+    },
+    {
+      "id": "clean-documentation-change",
+      "expected": {"review_findings": []},
+      "run": {"review_findings": []}
+    }
+  ]
+}
