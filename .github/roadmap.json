@@ -1,0 +1,96 @@
+[
+  {
+    "id": "harness-roadmap",
+    "title": "Agent eval harness roadmap",
+    "body": "Track the work needed to build and release the PR review and coding-agent evaluation harness. Each sub-issue has its own completion criteria.",
+    "tasks": [
+      {
+        "id": "harness-pr-checks",
+        "title": "Require the tests check for pull requests into main",
+        "body": "Verify the initial implementation PR runs the Python tests and deterministic review and coding replay. Configure a ruleset that requires a PR and the passing tests check on main. Record a successful GitHub Actions run."
+      },
+      {
+        "id": "harness-independent-verifier",
+        "title": "Capture an independently verified coding-agent run",
+        "body": "Add a pinned task with a known failing fix check and a passing regression check on the baseline. Use a verifier outside the agent-editable patch. Replay a successful fix and a patch with a regression."
+      },
+      {
+        "id": "harness-review-cases",
+        "title": "Benchmark PR reviews against labeled findings",
+        "body": "Add a clean PR and a defect-bearing PR with reviewed findings. Document how free-text findings map to labels and report missed issues, false positives, and duplicates."
+      },
+      {
+        "id": "harness-operational-metrics",
+        "title": "Add scope, verifier integrity, budget, and loop metrics",
+        "body": "Check protected files and verifier integrity. Capture token, call, time, and retry budgets where available. Distinguish allowed retries, repeated actions without progress, and missing telemetry."
+      },
+      {
+        "id": "harness-reporting",
+        "title": "Report repeated judge scores and confidence intervals",
+        "body": "Score a fixed trace multiple times with a trace-based rubric. Record individual scores, mean, spread, and failures. Distinguish intervals over judge repeats from intervals across cases and report main and edge groups."
+      },
+      {
+        "id": "harness-golden-data",
+        "title": "Generate and promote versioned golden cases",
+        "body": "Generate synthetic drafts with provenance. Warn below two real goldens per synthetic case and document the 80/20 main-to-edge target. Promote reviewed runs through PRs with an idempotent promotion command."
+      },
+      {
+        "id": "harness-metric-calibration",
+        "title": "Generate metric drafts and calibrate against human labels",
+        "body": "Draft a deterministic metric and a trace-based rubric. Tune against development cases, evaluate on held-out scenario families, and report false passes and false failures before enabling a metric by default."
+      },
+      {
+        "id": "harness-harbor-import",
+        "title": "Import a Harbor-format benchmark run",
+        "body": "Choose native Harbor or Inspect AI for one task. Import a saved run while preserving the task version, verifier outcome, trajectory, and available telemetry. Replay it with the harness metrics."
+      },
+      {
+        "id": "harness-first-release",
+        "title": "Publish the first runnable harness release",
+        "body": "Verify the credential-free replay commands from a fresh checkout. Include a passing report and a report for a deliberately failed coding case. Tag the first release and link it from the repo README."
+      }
+    ]
+  },
+  {
+    "id": "portfolio-roadmap",
+    "title": "GitHub portfolio improvements",
+    "body": "Track public evidence of current work in agent evaluation, coding workflows, Python, and speech ML. Link the published artifact before closing work that happens outside a PR.",
+    "tasks": [
+      {
+        "id": "portfolio-thesis-results",
+        "title": "Document the Arabic dialect identification thesis and results",
+        "body": "Add a root README describing the data2vec classifier, dataset, dialects, personal contribution, evaluation split, and a verified result against a baseline. Link the thesis report if it can be shared."
+      },
+      {
+        "id": "portfolio-thesis-replay",
+        "title": "Make the thesis example reproducible",
+        "body": "Document a runnable inference or evaluation command with dependencies and a shareable example. Remove tracked cache artifacts and verify the command from a clean checkout."
+      },
+      {
+        "id": "portfolio-audio-project",
+        "title": "Refresh the MATLAB equaliser repository",
+        "body": "Consolidate the README, document how to run the test tone, add a before-and-after spectrogram, and remove any personal identifiers from published docs."
+      },
+      {
+        "id": "portfolio-backend-project",
+        "title": "Document the Python backend project contributions",
+        "body": "Explain what the project does, identify personal contributions and tests, and document how to run it while preserving course and teammate attribution."
+      },
+      {
+        "id": "portfolio-profile-pins",
+        "title": "Update the GitHub profile and pinned repositories",
+        "body": "Add a profile README that leads with current agent evaluation and Python work. Link runnable projects and update the pin order once the harness is ready."
+      },
+      {
+        "id": "portfolio-resume-links",
+        "title": "Align the résumé with the portfolio",
+        "body": "Link the thesis and the most relevant runnable project. For each linked project, state a personal contribution and a verified result where available."
+      },
+      {
+        "id": "portfolio-coding-workflows",
+        "title": "Publish the coding-agent workflows demo",
+        "body": "Document standalone roles and run one end-to-end change with a handoff, review finding, resulting fix, and verification output. Include a command that works from a fresh checkout."
+      }
+    ]
+  }
+]
