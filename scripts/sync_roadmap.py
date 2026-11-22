@@ -28,14 +28,26 @@ def github_api(method, path, payload=None, paginate=False):
 
 
 def validate_roadmap(roadmap):
+    if not isinstance(roadmap, list):
+        raise ValueError("Roadmap must be a list of parents")
+
     ids = set()
     for parent in roadmap:
+        if not isinstance(parent, dict) or not isinstance(parent.get("tasks"), list):
+            raise ValueError("Each roadmap parent must contain a tasks list")
         for entry in (parent, *parent["tasks"]):
-            key = entry["id"]
+            if not isinstance(entry, dict):
+                raise ValueError("Each roadmap entry must be an object")
+            key = entry.get("id")
+            if not isinstance(key, str) or not ROADMAP_ID.fullmatch(f"Roadmap ID `{key}`"):
+                raise ValueError(f"Invalid roadmap ID {key!r}")
             if key in ids:
                 raise ValueError(f"Duplicate roadmap ID {key}")
-            if not ROADMAP_ID.fullmatch(f"Roadmap ID `{key}`"):
-                raise ValueError(f"Invalid roadmap ID {key}")
+            title = entry.get("title")
+            if not isinstance(title, str) or not title.strip():
+                raise ValueError(f"Roadmap entry {key} must have a nonempty title")
+            if not isinstance(entry.get("body"), str):
+                raise ValueError(f"Roadmap entry {key} must have a string body")
             ids.add(key)
 
 
