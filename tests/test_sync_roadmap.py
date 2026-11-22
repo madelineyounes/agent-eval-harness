@@ -75,3 +75,18 @@ class SyncRoadmapTests(unittest.TestCase):
             sync_roadmap(ROADMAP + ROADMAP, REPOSITORY, github)
 
         self.assertEqual(github.created, [])
+
+    def test_missing_task_body_fails_before_creating_any_issues(self):
+        github = FakeGitHub()
+        parent = ROADMAP[0]
+        roadmap = [{
+            **parent,
+            "tasks": [
+                *parent["tasks"],
+                {"id": "missing-body", "title": "Incomplete task"},
+            ],
+        }]
+
+        with self.assertRaisesRegex(ValueError, "missing-body.*body"):
+            sync_roadmap(roadmap, REPOSITORY, github)
+        self.assertEqual(github.created, [])
