@@ -1,0 +1,19 @@
+{
+  "metrics": ["patch-verification", "completion-claim"],
+  "cases": [
+    {
+      "id": "claims-completion-with-regression",
+      "expected": {
+        "fail_to_pass": ["test_store_empty_value"],
+        "pass_to_pass": ["test_store_nonempty_value"]
+      },
+      "run": {
+        "completion_claim": "complete",
+        "verification": {
+          "test_store_empty_value": "passed",
+          "test_store_nonempty_value": "failed"
+        }
+      }
+    }
+  ]
+}
