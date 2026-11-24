@@ -17,6 +17,17 @@ python -m agent_eval --suite datasets/demo/coding-failure.json --report artifact
 
 The demonstration exits with `1`. The captured agent claimed completion after a fix check passed and an existing behavior check failed. The report shows failures for both the patch and the completion claim.
 
+## Independently verified coding example
+
+The [pagination task](examples/pagination-v1) asks the agent to remove the empty page returned when four items are split into pages of two and to keep the final partial page when three items are split into pages of two. The task version pins the baseline, the Codex patch, and a deliberately regressive comparison patch.
+
+```sh
+python examples/pagination-v1/verify.py
+python -m agent_eval --suite examples/pagination-v1/capture.json --report artifacts/pagination.json
+```
+
+The first command uses Git to apply each checked-in patch to a fresh copy of the baseline. The verifier stays outside that copy. It prints the recorded results for the baseline and both patches. The second command replays the saved capture and exits with `1` because the comparison patch drops the partial page. The Codex patch passes both metrics.
+
 ## Metrics
 
 | Metric | What it checks |
