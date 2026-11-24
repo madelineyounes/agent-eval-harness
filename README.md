@@ -30,7 +30,7 @@ python examples/pagination-v1/verify.py
 python -m agent_eval --suite examples/pagination-v1/capture.json --report artifacts/pagination.json
 ```
 
-The first command uses Git to apply each checked-in patch to a fresh copy of the baseline. The verifier stays outside that copy. It prints the recorded results for the baseline and both patches. The second command replays the saved capture and exits with `1` because the comparison patch drops the partial page. The Codex patch passes both metrics.
+The first command uses Git to apply each checked-in patch to a fresh copy of the baseline. The verifier stays outside that copy and records the changed paths and its SHA-256 hash before and after the run. The second command replays the capture and exits with `1` because the comparison patch drops the partial page. The Codex patch passes all four checks.
 
 ## Metrics
 
@@ -39,6 +39,8 @@ The first command uses Git to apply each checked-in patch to a fresh copy of the
 | `review-findings` | Counts matched, unexpected, missed, and duplicate findings. Reports precision and recall when their denominators are nonzero. |
 | `patch-verification` | Checks captured verifier results for both required fixes and existing behavior. |
 | `completion-claim` | Checks whether a claim of completion has passing verifier evidence. |
+| `change-scope` | Checks recorded changed paths against the case's allowlist. |
+| `verifier-integrity` | Compares SHA-256 hashes for the case's protected verifier files. |
 
 Review findings use curated keys with a file path, symbol, and issue ID. Review free-text findings and map them to keys before replay. A suite declares default metrics. Repeat `--metric` to replace the defaults with your selection. Exit codes are `0` for pass, `1` for failed metrics, and `2` for invalid inputs or execution errors.
 
