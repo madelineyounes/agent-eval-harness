@@ -56,6 +56,8 @@ The replay exits `1`. The report identifies the exceeded tool-call budget and th
 
 Reports retain each captured run and summarize results overall and by the optional case `group` values `main` and `edge`. The pass rate counts completed cases, while the completion rate includes execution errors in its denominator. Each completed case contributes one score to the metric mean when it has a numeric result.
 
+Confidence intervals use 2,000 bootstrap resamples and seed `0`. A fixed-run interval needs at least 10 completed, independent judge repeats under the same settings. It measures variation in the judge's scores for that run. A suite interval needs at least 20 independently sampled cases with complete scores, at least five per included group, and distinct `scenario_family` values. The suite must declare `"sampling": "independent"` based on its sampling design. The bootstrap preserves the main and edge counts. Reports give a reason when the data cannot support an interval. Smoke suites are descriptive.
+
 The current CLI scores captured verifier outcomes. The [spec](docs/spec.md) describes agent execution, trace metrics, reporting, and golden promotion.
 
 ## Contributing

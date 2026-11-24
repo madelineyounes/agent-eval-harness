@@ -1,6 +1,8 @@
 from collections import Counter
 from statistics import mean
 
+from agent_eval.intervals import suite_interval
+
 
 GROUPS = ("main", "edge")
 STATUSES = ("pass", "fail", "error")
@@ -18,7 +20,7 @@ def rates(results):
     }
 
 
-def summarize(cases, metrics):
+def summarize(cases, metrics, sampling=None):
     groups = {"overall": cases, **{group: [case for case in cases if case.get("group") == group] for group in GROUPS}}
     return {
         "cases": {
@@ -28,7 +30,10 @@ def summarize(cases, metrics):
         },
         "metrics": {
             metric: {
-                group: rates([case["metrics"][metric] for case in members])
+                group: {
+                    **rates([case["metrics"][metric] for case in members]),
+                    **({"confidence_interval": suite_interval(members, metric, sampling)} if group == "overall" else {}),
+                }
                 for group, members in groups.items()
             }
             for metric in metrics

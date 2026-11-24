@@ -1,5 +1,7 @@
 from statistics import mean, stdev
 
+from agent_eval.intervals import judge_interval
+
 
 METRIC = "trajectory-quality"
 RUBRIC_VERSION = "trajectory-evidence-v1"
@@ -53,4 +55,5 @@ def evaluate(run, judge, model, threshold, repeats):
         "requested_repeats": repeats,
         "completed_repeats": len(scores),
         "repeats": results,
+        "confidence_interval": judge_interval(scores, complete=complete),
     }
