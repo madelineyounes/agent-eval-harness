@@ -1,0 +1,37 @@
+name: Publish first replay release
+
+on:
+  push:
+    tags: [v0.1.0]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Verify the release checkout
+        run: |
+          python -m unittest discover -s tests -v
+          python -m agent_eval --suite datasets/smoke/review.json --report artifacts/review.json
+          python -m agent_eval --suite datasets/smoke/coding.json --report artifacts/coding.json
+          status=0
+          python -m agent_eval --suite datasets/demo/coding-failure.json --report artifacts/coding-failure.json || status=$?
+          test "$status" -eq 1
+          python -c "import json, pathlib; report = json.loads(pathlib.Path('artifacts/coding-failure.json').read_text()); checks = report['cases'][0]['metrics']['patch-verification']['details']['regression_checks']; assert checks['failed'] == ['test_store_nonempty_value']"
+      - name: Publish reports
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" artifacts/review.json artifacts/coding.json artifacts/coding-failure.json --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" --verify-tag --title 'Agent eval harness v0.1.0' --notes-file docs/releases/v0.1.0.md artifacts/review.json artifacts/coding.json artifacts/coding-failure.json
+          fi
