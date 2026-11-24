@@ -10,6 +10,7 @@ python -m unittest discover -s tests -v
 python -m agent_eval --list-metrics
 python -m agent_eval --suite datasets/smoke/review.json --report artifacts/review.json
 python -m agent_eval --suite datasets/smoke/coding.json --report artifacts/coding.json
+python -m agent_eval --suite datasets/smoke/docs.json --report artifacts/docs.json
 ```
 
 The clean PR and the PR with a known finding both pass. The coding case passes because the captured verifier results confirm the fix and preserve existing behavior.
@@ -48,6 +49,8 @@ Edit metric definitions under [metrics/](metrics). `--list-metrics` shows the ID
 | `verifier-integrity` | Compares SHA-256 hashes for the case's protected verifier files. |
 | `execution-budget` | Compares observed token, call, retry, and time counts with case-specific limits. |
 | `loop-detection` | Checks consecutive identical tool calls and results against the allowed retry count. |
+| `tool-call-contract` | Checks required tool calls and arguments, order when requested, and forbidden tool names. |
+| `response-expectations` | Checks that a response contains the expected phrases. |
 
 Review findings use curated keys with a file path, symbol, and issue ID. Review free-text findings and map them to keys before replay. A suite declares default metrics. Repeat `--metric` to replace the defaults with your selection. Exit codes are `0` for pass, `1` for failed metrics, and `2` for invalid inputs or execution errors.
 
@@ -61,7 +64,21 @@ The replay exits `1`. The report identifies the exceeded tool-call budget and th
 
 Reports retain each captured run and summarize results overall and by the optional case `group` values `main` and `edge`. The pass rate counts completed cases, while the completion rate includes execution errors in its denominator. Each completed case contributes one score to the metric mean when it has a numeric result.
 
+`summary.operations` reports trace coverage, recorded telemetry totals, and missing-case counts. Tool call counts can come from a recorded trace. Timeout counts cover traces with a structured status for every call. Empty recorded traces count as zero calls and zero timeouts. The summary also lists cases with loop or metric failures.
+
 Confidence intervals use 2,000 bootstrap resamples and seed `0`. A fixed-run interval needs at least 10 completed, independent judge repeats under the same settings. It measures variation in the judge's scores for that run. A suite interval needs at least 20 independently sampled cases with complete scores, at least five per included group, and distinct `scenario_family` values. The suite must declare `"sampling": "independent"` based on its sampling design. The bootstrap preserves the main and edge counts. Reports give a reason when the data cannot support an interval. Smoke suites are descriptive.
+
+## Capture a documentation lookup
+
+The scripted read-only adapter records one mock tool call per case. The suite covers successful lookup, a missing document, and a timeout. It runs without model credentials.
+
+```sh
+python -m agent_eval --suite datasets/smoke/docs.json --mode live --adapter mock-docs --report artifacts/docs-capture.json
+python -m agent_eval --suite datasets/smoke/docs.json --run-file artifacts/docs-capture.json --report artifacts/docs-replay.json
+python -m agent_eval --suite datasets/demo/skipped-lookup.json --report artifacts/skipped-lookup.json
+```
+
+The skipped-lookup example repeats the correct answer with an empty trace. It exits `1` and reports the missing `lookup_doc` call. Run it with `--metric response-expectations` to check the answer alone. That selection exits `0`.
 
 ## Score a fixed run with a live judge
 

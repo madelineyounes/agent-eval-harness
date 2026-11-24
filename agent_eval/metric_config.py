@@ -1,3 +1,4 @@
+import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -6,7 +7,8 @@ import yaml
 
 from agent_eval.judge_providers import PROVIDERS
 from agent_eval.metrics import (
-    change_scope, completion_claim, execution_budget, loop_detection, patch_verification, review_findings, verifier_integrity,
+    change_scope, completion_claim, execution_budget, loop_detection, patch_verification, response_expectations,
+    review_findings, tool_call_contract, verifier_integrity,
 )
 
 
@@ -19,6 +21,8 @@ EVALUATORS = {
     "verifier-integrity": verifier_integrity.evaluate,
     "execution-budget": execution_budget.evaluate,
     "loop-detection": loop_detection.evaluate,
+    "tool-call-contract": tool_call_contract.evaluate,
+    "response-expectations": response_expectations.evaluate,
 }
 
 
@@ -78,6 +82,10 @@ def parse_metric(data):
         expected = data.get("expected", {})
         if not isinstance(expected, dict) or not all(isinstance(key, str) for key in expected):
             raise ValueError("expected must be a mapping with text keys")
+        try:
+            json.dumps(expected, sort_keys=True, allow_nan=False)
+        except (ValueError, TypeError) as error:
+            raise ValueError("expected must contain JSON-compatible values") from error
         return DeterministicMetric(metric_id, version, evaluator, expected)
     if kind == "llm-judge":
         if data.keys() - common - {"provider", "model", "threshold", "rubric_version", "rubric"}:

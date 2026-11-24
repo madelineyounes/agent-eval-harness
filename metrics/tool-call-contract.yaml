@@ -1,0 +1,4 @@
+id: tool-call-contract
+type: deterministic
+version: "1"
+evaluator: tool-call-contract

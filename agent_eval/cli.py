@@ -5,6 +5,7 @@ from pathlib import Path
 
 from agent_eval.calibration import calibrate, draft_metric
 from agent_eval.captures import use_saved_runs
+from agent_eval.docs_adapter import capture_docs
 from agent_eval.goldens import SPLITS, draft, load_dataset, promote, read, write_proposal
 from agent_eval.harbor_import import import_trial
 from agent_eval.judge_providers import PROVIDERS, make_judge
@@ -50,6 +51,8 @@ def evaluate_suite(suite, selected_metrics, report, *, definitions=None, mode="r
             judges[metric] = (scorer, model, threshold, provider)
     if "dataset_version" in suite:
         report["dataset_version"] = suite["dataset_version"]
+    if suite.get("source") in ("real", "synthetic"):
+        report["dataset_source"] = suite["source"]
     if "source_balance" in suite:
         report["source_balance"] = suite["source_balance"]
     seen_cases = set()
@@ -189,6 +192,7 @@ def main(argv=None):
     parser.add_argument("--repeats", type=int, default=1, help="Number of scores to request for each stochastic metric.")
     parser.add_argument("--mode", choices=("replay", "live"), default="replay", help="Enable a live judge in live mode.")
     parser.add_argument("--run-file", type=Path, help="Load fixed runs from a saved evaluation report.")
+    parser.add_argument("--adapter", choices=("mock-docs",), help="Capture one new run per case with a live adapter.")
     parser.add_argument("--judge-provider", choices=PROVIDERS, help="Override the provider in the YAML judge definition.")
     parser.add_argument("--judge-model", help="Override the model in the YAML judge definition.")
     parser.add_argument("--judge-threshold", type=float, help="Minimum mean trajectory judge score to pass.")
@@ -208,6 +212,8 @@ def main(argv=None):
         parser.error("--split requires --dataset")
     if args.repeats < 1:
         parser.error("--repeats must be a positive integer")
+    if args.adapter and (args.mode != "live" or args.run_file is not None):
+        parser.error("--adapter requires --mode live and cannot be used with --run-file")
     if args.report and args.report.resolve().is_relative_to(args.metrics_dir.resolve()) and args.report.suffix in (".yaml", ".yml"):
         parser.error("Report path must be outside the YAML metric definitions")
 
@@ -216,6 +222,8 @@ def main(argv=None):
         suite = load_dataset(args.dataset, args.split) if args.dataset is not None else read(args.suite)
         if args.run_file is not None:
             suite = use_saved_runs(suite, json.loads(args.run_file.read_text(encoding="utf-8")))
+        if args.adapter == "mock-docs":
+            suite = capture_docs(suite)
         evaluate_suite(
             suite, args.metric, report, definitions=load_metrics(args.metrics_dir), mode=args.mode,
             judge_provider=args.judge_provider, judge_model=args.judge_model,

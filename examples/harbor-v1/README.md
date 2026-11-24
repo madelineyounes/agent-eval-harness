@@ -7,7 +7,7 @@ This example uses native Harbor `0.23.0` and ATIF `v1.8`. The task creates `hell
 On Linux with Docker available, install the pinned runner and run the scripted agent. The agent makes no model requests. It records its two shell calls and their observed results in ATIF.
 
 ```sh
-python -m pip install harbor==0.23.0
+python -m pip install -r requirements.txt harbor==0.23.0
 PYTHONPATH=examples/harbor-v1 harbor trials start --path examples/harbor-v1/hello-file --agent scripted_hello:ScriptedHelloAgent --trial-name scripted --trials-dir artifacts/harbor-trials
 ```
 

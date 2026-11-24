@@ -2,6 +2,7 @@ from collections import Counter
 from statistics import mean
 
 from agent_eval.intervals import suite_interval
+from agent_eval.operations import summarize_operations
 
 
 GROUPS = ("main", "edge")
@@ -23,6 +24,7 @@ def rates(results):
 def summarize(cases, metrics, sampling=None):
     groups = {"overall": cases, **{group: [case for case in cases if case.get("group") == group] for group in GROUPS}}
     return {
+        "operations": summarize_operations(cases),
         "cases": {
             group: rates([{"status": max((value["status"] for value in case["metrics"].values()), key=STATUSES.index)}
                           for case in members])

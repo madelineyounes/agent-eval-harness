@@ -27,6 +27,8 @@ Capture operational telemetry alongside the trace. Record input and output token
 
 The first three cases form separate review and coding smoke suites. The unsupported completion case runs as a standalone demonstration. The first implementation scores structured captures. A later adapter can collect review evidence and independent verifier outputs from an actual coding task.
 
+The documentation assistant adds a read-only lookup example. Its smoke suite covers a successful lookup, a missing record, and a timeout. A skipped-lookup control returns the correct answer without calling the required tool. It passes response expectations and fails the tool call contract. The scripted adapter captures new mock runs at the tool boundary.
+
 ## Dataset design
 
 Target roughly 80% main cases and 20% edge cases by case count in the benchmark dataset. Main cases cover common tasks and the variation users encounter within them. Edge cases cover failure modes with distinct consequences, such as missing data, timeouts, ambiguous requests, unnecessary retries, and premature stopping. The small smoke and demonstration suites select cases for coverage.
@@ -70,6 +72,8 @@ Each metric has a YAML definition under `metrics/`. Deterministic evaluators liv
 The first review metric compares human-reviewed finding keys made up of file path, symbol, and issue ID. Free-text review matching requires annotated examples and adjudication. Include both defect-bearing and clean PRs. For coding tasks, use a verifier controlled by the benchmark, keep its checks outside the editable patch, and validate the baseline so acceptable alternative fixes can pass. [SWE-bench Verified test design](https://openai.com/index/introducing-swe-bench-verified/)
 
 The next deterministic metrics are change scope and verifier integrity, followed by execution budget and loop detection. Check protected paths and task-specific scope. Use recorded telemetry for token, call, retry, and time limits. For loops, look for repeated actions and unchanged outcomes beyond the allowed retry count. Add a trace-based judge once the dataset has labeled examples of review actionability and justified tool choices.
+
+The `tool-call-contract` evaluator checks required names and arguments, optional call order, and forbidden tool names. The `response-expectations` evaluator checks fixture-defined answer phrases.
 
 A registry maps stable metric IDs to their modules and supported run modes. A suite declares its default metric IDs. Use `--list-metrics` to see the available metrics and their supported modes. Repeat `--metric` to select one or more metrics for an ad hoc run. An explicit selection replaces the suite defaults for that run. The required CI job always uses the checked-in smoke suite defaults.
 

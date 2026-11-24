@@ -1,0 +1,18 @@
+{
+  "dataset_version": "mock-docs-skipped-v1",
+  "source": "synthetic",
+  "metrics": ["tool-call-contract", "response-expectations"],
+  "cases": [
+    {
+      "id": "lookup-skipped",
+      "group": "edge",
+      "scenario_family": "doc-lookup-skipped",
+      "prompt": "How long do I have to return an order?",
+      "expected": {
+        "answer_contains": ["30 days"],
+        "required_calls": [{"tool": "lookup_doc", "arguments": {"id": "returns"}}]
+      },
+      "run": {"id": "recorded-doc-lookup-skipped", "final_response": "Returns are accepted within 30 days.", "tool_calls": []}
+    }
+  ]
+}
