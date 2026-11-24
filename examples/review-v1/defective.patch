@@ -1,0 +1,13 @@
+diff --git a/catalog.py b/catalog.py
+--- a/catalog.py
++++ b/catalog.py
+@@ -1,6 +1,7 @@
+ def store(catalog, key, value):
+-    catalog[key] = value
++    if value:
++        catalog[key] = value
+ 
+ 
+ def has_key(catalog, key):
+-    return key in catalog
++    return bool(catalog.get(key))

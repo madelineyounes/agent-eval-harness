@@ -1,0 +1,8 @@
+diff --git a/catalog.py b/catalog.py
+--- a/catalog.py
++++ b/catalog.py
+@@ -5,2 +5,3 @@
+ def has_key(catalog, key):
+-    return key in catalog
++    present = key in catalog
++    return present

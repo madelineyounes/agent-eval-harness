@@ -1,0 +1,25 @@
+{
+  "metrics": ["review-findings"],
+  "cases": [
+    {
+      "id": "clean-catalog-review",
+      "expected": {"review_findings": []},
+      "run": {"review_findings": []}
+    },
+    {
+      "id": "defective-catalog-review",
+      "expected": {
+        "review_findings": [
+          ["catalog.py", "store", "drops-empty-value"],
+          ["catalog.py", "has_key", "ignores-present-empty-value"]
+        ]
+      },
+      "run": {
+        "review_findings": [
+          ["catalog.py", "store", "drops-empty-value"],
+          ["catalog.py", "has_key", "ignores-present-empty-value"]
+        ]
+      }
+    }
+  ]
+}
