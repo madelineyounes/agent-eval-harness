@@ -1,6 +1,6 @@
 {
   "id": "hello-file",
-  "harbor_task": "hello-file",
+  "harbor_task": "agent-eval-harness/hello-file",
   "split": "development",
   "group": "main",
   "scenario_family": "create-file-preserve-existing",
