@@ -1,0 +1,33 @@
+name: Live judge example
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  score:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Capture fixed example
+        run: python -m agent_eval --suite examples/judge-v1/suite.json --report artifacts/judge-capture.json
+      - name: Score fixed example
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: >-
+          python -m agent_eval --suite examples/judge-v1/suite.json --mode live
+          --run-file artifacts/judge-capture.json --metric trajectory-quality
+          --judge-model gpt-5-mini-2025-08-07 --judge-threshold 0.5 --repeats 10
+          --report artifacts/judge.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: live-judge-report
+          path: artifacts/judge*.json

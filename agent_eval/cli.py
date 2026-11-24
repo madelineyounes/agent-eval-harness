@@ -3,6 +3,7 @@ import json
 import sys
 from pathlib import Path
 
+from agent_eval.captures import use_saved_runs
 from agent_eval.metrics import (
     change_scope,
     completion_claim,
@@ -14,6 +15,7 @@ from agent_eval.metrics import (
     verifier_integrity,
 )
 from agent_eval.reporting import GROUPS, summarize
+from agent_eval.openai_judge import openai_judge
 
 
 METRICS = {
@@ -87,6 +89,10 @@ def main(argv=None):
     parser.add_argument("--suite", type=Path, help="Path to a JSON replay suite.")
     parser.add_argument("--metric", action="append", help="Select a metric, replacing suite defaults. Repeat for multiple metrics.")
     parser.add_argument("--repeats", type=int, default=1, help="Number of scores to request for each stochastic metric.")
+    parser.add_argument("--mode", choices=("replay", "live"), default="replay", help="Enable a live judge in live mode.")
+    parser.add_argument("--run-file", type=Path, help="Load fixed runs from a saved evaluation report.")
+    parser.add_argument("--judge-model", help="OpenAI model ID for a live trajectory judge.")
+    parser.add_argument("--judge-threshold", type=float, help="Minimum mean trajectory judge score to pass.")
     parser.add_argument("--report", type=Path, help="Write the evaluation report as JSON.")
     args = parser.parse_args(argv)
     if args.list_metrics:
@@ -97,10 +103,22 @@ def main(argv=None):
     if args.repeats < 1:
         parser.error("--repeats must be a positive integer")
 
-    report = {"schema_version": 1, "mode": "replay", "status": "pass", "cases": []}
+    report = {"schema_version": 1, "mode": args.mode, "status": "pass", "cases": []}
     try:
         suite = json.loads(args.suite.read_text(encoding="utf-8"))
-        evaluate_suite(suite, args.metric, report, repeats=args.repeats)
+        if args.run_file is not None:
+            suite = use_saved_runs(suite, json.loads(args.run_file.read_text(encoding="utf-8")))
+        judge = None
+        if isinstance(suite, dict):
+            selected = args.metric or suite.get("metrics")
+            if isinstance(selected, list) and trajectory_quality.METRIC in selected:
+                if args.mode != "live" or not args.judge_model or args.judge_threshold is None:
+                    raise ValueError("trajectory-quality requires live mode, --judge-model, and --judge-threshold")
+                judge = openai_judge(args.judge_model)
+        evaluate_suite(
+            suite, args.metric, report, judge=judge, judge_model=args.judge_model,
+            judge_threshold=args.judge_threshold, repeats=args.repeats,
+        )
     except (OSError, ValueError) as error:
         report.update(status="error", reason=str(error))
 
@@ -108,6 +126,9 @@ def main(argv=None):
         try:
             if args.report.exists() and args.suite.exists() and args.report.samefile(args.suite):
                 print("Report path refers to the input suite", file=sys.stderr)
+                return 2
+            if args.report.exists() and args.run_file and args.run_file.exists() and args.report.samefile(args.run_file):
+                print("Report path refers to the saved runs input", file=sys.stderr)
                 return 2
             args.report.parent.mkdir(parents=True, exist_ok=True)
             args.report.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")

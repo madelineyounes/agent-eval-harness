@@ -58,6 +58,19 @@ Reports retain each captured run and summarize results overall and by the option
 
 Confidence intervals use 2,000 bootstrap resamples and seed `0`. A fixed-run interval needs at least 10 completed, independent judge repeats under the same settings. It measures variation in the judge's scores for that run. A suite interval needs at least 20 independently sampled cases with complete scores, at least five per included group, and distinct `scenario_family` values. The suite must declare `"sampling": "independent"` based on its sampling design. The bootstrap preserves the main and edge counts. Reports give a reason when the data cannot support an interval. Smoke suites are descriptive.
 
+## Score a fixed run with a live judge
+
+The optional `trajectory-quality` metric uses the OpenAI Responses API to score the evidence behind a captured answer. The `trajectory-evidence-v1` rubric scores absent or contradictory evidence as `0`, partial support as `0.5`, and support for the main claim as `1`. Each repeat cites numbered tool calls. The example uses `gpt-5-mini-2025-08-07` and a mean threshold of `0.5`. [OpenAI GPT-5 mini documentation](https://developers.openai.com/api/docs/models/gpt-5-mini)
+
+Set `OPENAI_API_KEY` for live requests. Run the first command to save the fixed capture. The second command sends its final answer and tool calls to the judge for ten scoring requests. Use captures approved for that provider. The suite and saved report must have the same `dataset_version` and matching case IDs.
+
+```sh
+python -m agent_eval --suite examples/judge-v1/suite.json --report artifacts/judge-capture.json
+python -m agent_eval --suite examples/judge-v1/suite.json --mode live --run-file artifacts/judge-capture.json --metric trajectory-quality --judge-model gpt-5-mini-2025-08-07 --judge-threshold 0.5 --repeats 10 --report artifacts/judge.json
+```
+
+The [synthetic judge report](examples/judge-v1/report.json) shows per-repeat scores and the two interval fields. The manually triggered **Live judge example** workflow uses the same commands and reads its key from GitHub Actions secrets.
+
 The current CLI scores captured verifier outcomes. The [spec](docs/spec.md) describes agent execution, trace metrics, reporting, and golden promotion.
 
 ## Contributing
