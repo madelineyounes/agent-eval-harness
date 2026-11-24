@@ -64,6 +64,8 @@ def evaluate_suite(suite, selected_metrics, report, *, judge=None, judge_model=N
             case_result["run_id"] = run["id"]
         if case.get("group") in GROUPS:
             case_result["group"] = case["group"]
+        if isinstance(case.get("scenario_family"), str) and case["scenario_family"].strip():
+            case_result["scenario_family"] = case["scenario_family"]
         report["cases"].append(case_result)
         for metric in report["selected_metrics"]:
             try:
@@ -76,7 +78,7 @@ def evaluate_suite(suite, selected_metrics, report, *, judge=None, judge_model=N
             results[metric] = result
             if EXIT_CODES[result["status"]] > EXIT_CODES[report["status"]]:
                 report["status"] = result["status"]
-    report["summary"] = summarize(report["cases"], report["selected_metrics"])
+    report["summary"] = summarize(report["cases"], report["selected_metrics"], suite.get("sampling"))
 
 
 def main(argv=None):
