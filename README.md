@@ -17,6 +17,10 @@ python -m agent_eval --suite datasets/demo/coding-failure.json --report artifact
 
 The demonstration exits with `1`. The captured agent claimed completion after a fix check passed and an existing behavior check failed. The report shows failures for both the patch and the completion claim.
 
+## Labeled PR review example
+
+The [catalog review example](examples/review-v1) pairs clean and defective PR diffs with free-text reviews and finding labels. Its control report shows how replay counts a missed defect, an unsupported finding, and a duplicate.
+
 ## Independently verified coding example
 
 The [pagination task](examples/pagination-v1) asks the agent to remove the empty page returned when four items are split into pages of two and to keep the final partial page when three items are split into pages of two. The task version pins the baseline, the Codex patch, and a deliberately regressive comparison patch.
