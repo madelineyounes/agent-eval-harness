@@ -25,6 +25,8 @@ jobs:
         run: python -m agent_eval --suite datasets/smoke/review.json --report artifacts/review.json
       - name: Replay coding cases
         run: python -m agent_eval --suite datasets/smoke/coding.json --report artifacts/coding.json
+      - name: Replay documentation cases
+        run: python -m agent_eval --suite datasets/smoke/docs.json --report artifacts/docs.json
       - name: Upload evaluation reports
         if: success() || failure()
         uses: actions/upload-artifact@v4

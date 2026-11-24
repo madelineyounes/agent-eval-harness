@@ -1,4 +1,5 @@
 {
+  "source": "synthetic",
   "metrics": ["patch-verification", "completion-claim"],
   "cases": [
     {

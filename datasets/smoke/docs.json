@@ -1,0 +1,57 @@
+{
+  "dataset_version": "mock-docs-v1",
+  "source": "synthetic",
+  "metrics": ["tool-call-contract", "response-expectations"],
+  "documents": {"returns": "Returns are accepted within 30 days."},
+  "cases": [
+    {
+      "id": "lookup-success",
+      "group": "main",
+      "scenario_family": "doc-lookup-success",
+      "prompt": "How long do I have to return an order?",
+      "capture": {"document_id": "returns"},
+      "expected": {
+        "answer_contains": ["30 days"],
+        "required_calls": [{"tool": "lookup_doc", "arguments": {"id": "returns"}}],
+        "forbidden_tools": ["update_doc"]
+      },
+      "run": {
+        "id": "recorded-doc-lookup-success",
+        "final_response": "Returns are accepted within 30 days.",
+        "tool_calls": [{"tool": "lookup_doc", "arguments": {"id": "returns"}, "result": {"status": "success", "text": "Returns are accepted within 30 days."}}]
+      }
+    },
+    {
+      "id": "lookup-missing",
+      "group": "edge",
+      "scenario_family": "doc-lookup-missing",
+      "prompt": "Find the international returns policy.",
+      "capture": {"document_id": "international-returns"},
+      "expected": {
+        "answer_contains": ["document was unavailable"],
+        "required_calls": [{"tool": "lookup_doc", "arguments": {"id": "international-returns"}}]
+      },
+      "run": {
+        "id": "recorded-doc-lookup-missing",
+        "final_response": "The requested document was unavailable.",
+        "tool_calls": [{"tool": "lookup_doc", "arguments": {"id": "international-returns"}, "result": {"status": "missing"}}]
+      }
+    },
+    {
+      "id": "lookup-timeout",
+      "group": "edge",
+      "scenario_family": "doc-lookup-timeout",
+      "prompt": "How long do I have to return an order?",
+      "capture": {"document_id": "returns", "simulate_timeout": true},
+      "expected": {
+        "answer_contains": ["lookup timed out"],
+        "required_calls": [{"tool": "lookup_doc", "arguments": {"id": "returns"}}]
+      },
+      "run": {
+        "id": "recorded-doc-lookup-timeout",
+        "final_response": "The document lookup timed out.",
+        "tool_calls": [{"tool": "lookup_doc", "arguments": {"id": "returns"}, "result": {"status": "timeout"}}]
+      }
+    }
+  ]
+}
