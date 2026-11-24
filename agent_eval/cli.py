@@ -3,7 +3,15 @@ import json
 import sys
 from pathlib import Path
 
-from agent_eval.metrics import change_scope, completion_claim, patch_verification, review_findings, verifier_integrity
+from agent_eval.metrics import (
+    change_scope,
+    completion_claim,
+    execution_budget,
+    loop_detection,
+    patch_verification,
+    review_findings,
+    verifier_integrity,
+)
 
 
 METRICS = {
@@ -12,6 +20,8 @@ METRICS = {
     "completion-claim": completion_claim.evaluate,
     "change-scope": change_scope.evaluate,
     "verifier-integrity": verifier_integrity.evaluate,
+    "execution-budget": execution_budget.evaluate,
+    "loop-detection": loop_detection.evaluate,
 }
 EXIT_CODES = {"pass": 0, "fail": 1, "error": 2}
 

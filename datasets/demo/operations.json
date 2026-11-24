@@ -1,0 +1,29 @@
+{
+  "source": "synthetic",
+  "metrics": ["execution-budget", "loop-detection"],
+  "cases": [
+    {
+      "id": "lookup-recovers-after-retry",
+      "expected": {"budgets": {"tool_calls": 2}, "allowed_identical_retries": 1},
+      "run": {
+        "telemetry": {"tool_calls": 2, "retries": 1},
+        "tool_calls": [
+          {"tool": "lookup", "arguments": {"id": "catalog"}, "result": {"status": "timeout"}},
+          {"tool": "lookup", "arguments": {"id": "catalog"}, "result": {"status": "success"}}
+        ]
+      }
+    },
+    {
+      "id": "lookup-repeats-without-progress",
+      "expected": {"budgets": {"tool_calls": 2}, "allowed_identical_retries": 1},
+      "run": {
+        "telemetry": {"tool_calls": 3, "retries": 2},
+        "tool_calls": [
+          {"tool": "lookup", "arguments": {"id": "catalog"}, "result": {"status": "timeout"}},
+          {"tool": "lookup", "arguments": {"id": "catalog"}, "result": {"status": "timeout"}},
+          {"tool": "lookup", "arguments": {"id": "catalog"}, "result": {"status": "timeout"}}
+        ]
+      }
+    }
+  ]
+}
