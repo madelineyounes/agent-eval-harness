@@ -1,0 +1,14 @@
+{
+  "metric_id": "catalog-lookup-quality",
+  "metric_version": "draft-v1",
+  "rubric_version": "catalog-evidence-v1",
+  "label_source": "synthetic",
+  "label_provenance": "Curated to demonstrate threshold selection and disagreement reporting",
+  "cases": [
+    {"id": "dev-supported", "split": "development", "scenario_family": "catalog-lookup", "label": "pass", "score": 0.75},
+    {"id": "dev-missing", "split": "development", "scenario_family": "catalog-lookup", "label": "fail", "score": 0.25},
+    {"id": "held-false-pass", "split": "held-out", "scenario_family": "stale-stock", "label": "fail", "score": 0.9},
+    {"id": "held-false-fail", "split": "held-out", "scenario_family": "warehouse-lookup", "label": "pass", "score": 0.5},
+    {"id": "held-pass", "split": "held-out", "scenario_family": "warehouse-lookup", "label": "pass", "score": 0.95}
+  ]
+}
