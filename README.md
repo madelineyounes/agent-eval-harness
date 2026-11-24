@@ -2,6 +2,8 @@
 
 Replay captured PR reviews and coding-agent runs with selectable Python metrics. The first examples use synthetic JSON fixtures. Python 3.12 or later is enough to run them from a checkout.
 
+Download the v0.1.0 source and the passing and deliberately failing replay reports from the [first runnable release](https://github.com/madelineyounes/agent-eval-harness/releases/tag/v0.1.0).
+
 ```sh
 python -m unittest discover -s tests -v
 python -m agent_eval --list-metrics
