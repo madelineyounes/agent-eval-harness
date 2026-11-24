@@ -1,3 +1,4 @@
+import argparse
 import json
 import runpy
 import shutil
@@ -5,6 +6,7 @@ import subprocess
 import tempfile
 from hashlib import sha256
 from pathlib import Path
+from uuid import uuid4
 
 
 TASK = Path(__file__).resolve().parent
@@ -13,6 +15,17 @@ CHECKS = (
     ("exact_multiple_has_no_empty_page", ["a", "b", "c", "d"], [["a", "b"], ["c", "d"]]),
     ("partial_last_page_is_preserved", ["a", "b", "c"], [["a", "b"], ["c"]]),
 )
+CANDIDATE_COMMAND = """
+import contextlib
+import json
+import runpy
+import sys
+
+with contextlib.redirect_stdout(sys.stderr):
+    paginate = runpy.run_path('/candidate/pagination.py')['paginate']
+    outputs = [paginate(items, 2) for items in json.loads(sys.argv[1])]
+print(json.dumps(outputs))
+"""
 
 
 def snapshot(root):
@@ -25,7 +38,28 @@ def snapshot(root):
     }
 
 
-def verify(patch=None):
+def isolated_candidate(candidate):
+    candidate.parent.chmod(0o755)
+    container = f"agent-eval-pagination-{uuid4().hex}"
+    try:
+        result = subprocess.run([
+            "docker", "run", "--rm", "--name", container, "--network", "none", "--read-only",
+            "--cap-drop", "ALL", "--security-opt", "no-new-privileges", "--pids-limit", "32",
+            "--memory", "128m", "--cpus", "1", "--user", "65534:65534",
+            "--mount", f"type=bind,source={candidate.parent},target=/candidate,readonly",
+            "python:3.12-slim", "python", "-IB", "-c", CANDIDATE_COMMAND,
+            json.dumps([items for _, items, _ in CHECKS]),
+        ], check=True, capture_output=True, text=True, timeout=60)
+    except subprocess.TimeoutExpired:
+        subprocess.run(["docker", "rm", "-f", container], capture_output=True, timeout=10)
+        raise
+    outputs = json.loads(result.stdout)
+    if not isinstance(outputs, list) or len(outputs) != len(CHECKS):
+        raise ValueError("Container must return one candidate result per check")
+    return outputs
+
+
+def verify(patch=None, *, isolated=False):
     with tempfile.TemporaryDirectory() as directory:
         root = Path(directory)
         candidate = root / "pagination.py"
@@ -39,10 +73,14 @@ def verify(patch=None):
                 check=True,
             )
         after = snapshot(root)
-        paginate = runpy.run_path(str(candidate))["paginate"]
+        if isolated:
+            outputs = isolated_candidate(candidate)
+        else:
+            paginate = runpy.run_path(str(candidate))["paginate"]
+            outputs = [paginate(items, 2) for _, items, _ in CHECKS]
         verification = {
-            name: "passed" if paginate(items, 2) == expected else "failed"
-            for name, items, expected in CHECKS
+            name: "passed" if observed == expected else "failed"
+            for (name, _, expected), observed in zip(CHECKS, outputs, strict=True)
         }
         return {
             "verification": verification,
@@ -52,13 +90,13 @@ def verify(patch=None):
         }
 
 
-def capture():
+def capture(*, isolated=False):
     fix_check, regression_check = (name for name, _, _ in CHECKS)
     expected = {
         "fail_to_pass": [fix_check], "pass_to_pass": [regression_check],
         "allowed_paths": ["pagination.py"], "protected_paths": [VERIFIER.name],
     }
-    baseline = verify()["verification"]
+    baseline = verify(isolated=isolated)["verification"]
     if baseline != {fix_check: "failed", regression_check: "passed"}:
         raise ValueError(f"Unexpected baseline results: {baseline}")
 
@@ -75,7 +113,7 @@ def capture():
                     "patch": patch,
                     "final_response": response,
                     "completion_claim": "complete",
-                    **verify(patch),
+                    **verify(patch, isolated=isolated),
                 },
             }
             for case_id, source, patch, response in (
@@ -97,4 +135,6 @@ def capture():
 
 
 if __name__ == "__main__":
-    print(json.dumps(capture(), indent=2))
+    parser = argparse.ArgumentParser(description="Capture verification results for the pinned pagination patches.")
+    parser.add_argument("--isolated", action="store_true", help="Run each candidate in Docker with no network or writable mount.")
+    print(json.dumps(capture(isolated=parser.parse_args().isolated), indent=2))

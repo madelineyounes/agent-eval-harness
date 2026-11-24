@@ -1,12 +1,29 @@
 import json
+import runpy
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 class PaginationExampleTests(unittest.TestCase):
+    def test_isolated_runner_only_exposes_the_candidate_directory(self):
+        verifier = runpy.run_path("examples/pagination-v1/verify.py")
+        with tempfile.TemporaryDirectory() as directory:
+            candidate = Path(directory) / "pagination.py"
+            candidate.touch()
+            result = subprocess.CompletedProcess([], 0, stdout='[[["a", "b"], ["c", "d"]], [["a", "b"], ["c"]]]')
+            with patch("subprocess.run", return_value=result) as run:
+                observed = verifier["isolated_candidate"](candidate)
+            command = run.call_args.args[0]
+            self.assertEqual(command[:2], ["docker", "run"])
+            self.assertEqual(command[command.index("--network") + 1], "none")
+            self.assertIn("--read-only", command)
+            self.assertEqual(command[command.index("--mount") + 1], f"type=bind,source={candidate.parent},target=/candidate,readonly")
+            self.assertEqual(observed[1], [["a", "b"], ["c"]])
+
     def test_replays_the_captured_fix_and_regression(self):
         task = Path("examples/pagination-v1")
         suite = task / "capture.json"

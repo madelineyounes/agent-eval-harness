@@ -1,0 +1,27 @@
+name: Isolated pagination verifier
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/isolated-pagination.yml
+      - examples/pagination-v1/**
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Compare isolated verifier results with the saved capture
+        run: |
+          docker pull python:3.12-slim
+          python examples/pagination-v1/verify.py --isolated > isolated-capture.json
+          diff examples/pagination-v1/capture.json isolated-capture.json
