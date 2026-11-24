@@ -18,7 +18,9 @@ jobs:
         with:
           python-version: '3.12'
       - name: Run tests
-        run: python -m unittest discover -s tests -v
+        run: |
+          python -m pip install -r requirements.txt
+          python -m unittest discover -s tests -v
       - name: Replay review cases
         run: python -m agent_eval --suite datasets/smoke/review.json --report artifacts/review.json
       - name: Replay coding cases

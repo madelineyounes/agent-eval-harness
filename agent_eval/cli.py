@@ -7,34 +7,17 @@ from agent_eval.calibration import calibrate, draft_metric
 from agent_eval.captures import use_saved_runs
 from agent_eval.goldens import SPLITS, draft, load_dataset, promote, read, write_proposal
 from agent_eval.harbor_import import import_trial
-from agent_eval.metrics import (
-    change_scope,
-    completion_claim,
-    execution_budget,
-    loop_detection,
-    patch_verification,
-    review_findings,
-    trajectory_quality,
-    verifier_integrity,
-)
+from agent_eval.judge_providers import PROVIDERS, make_judge
+from agent_eval.metric_config import DEFAULT_DIRECTORY, EVALUATORS, JudgeMetric, load_metrics
+from agent_eval.metrics import trajectory_quality
 from agent_eval.reporting import GROUPS, summarize
-from agent_eval.openai_judge import openai_judge
 
 
-METRICS = {
-    "review-findings": review_findings.evaluate,
-    "patch-verification": patch_verification.evaluate,
-    "completion-claim": completion_claim.evaluate,
-    "change-scope": change_scope.evaluate,
-    "verifier-integrity": verifier_integrity.evaluate,
-    "execution-budget": execution_budget.evaluate,
-    "loop-detection": loop_detection.evaluate,
-}
 EXIT_CODES = {"pass": 0, "fail": 1, "error": 2}
-METRIC_IDS = (*METRICS, trajectory_quality.METRIC)
 
 
-def evaluate_suite(suite, selected_metrics, report, *, judge=None, judge_model=None, judge_threshold=None, repeats=1):
+def evaluate_suite(suite, selected_metrics, report, *, definitions=None, mode="replay",
+                   judge=None, judge_provider=None, judge_model=None, judge_threshold=None, repeats=1):
     if not isinstance(suite, dict):
         raise ValueError("Suite must be a JSON object")
     cases = suite.get("cases")
@@ -43,11 +26,28 @@ def evaluate_suite(suite, selected_metrics, report, *, judge=None, judge_model=N
         raise ValueError("Suite must contain at least one case")
     if not isinstance(metrics, list) or not metrics:
         raise ValueError("Select at least one metric")
+    if definitions is None:
+        definitions = load_metrics()
     for metric in metrics:
-        if not isinstance(metric, str) or metric not in METRIC_IDS:
+        if not isinstance(metric, str) or metric not in definitions:
             raise ValueError(f"Unknown metric {metric!r}")
+        if mode not in definitions[metric].modes:
+            raise ValueError(f"Metric {metric!r} requires --mode live")
 
     report["selected_metrics"] = list(dict.fromkeys(metrics))
+    judges = {}
+    for metric in report["selected_metrics"]:
+        definition = definitions[metric]
+        if isinstance(definition, JudgeMetric):
+            provider = judge_provider if judge_provider is not None else definition.provider
+            if provider != definition.provider and not judge_model:
+                raise ValueError(f"Set --judge-model when changing the provider for {metric}")
+            model = judge_model if judge_model is not None else definition.model
+            threshold = judge_threshold if judge_threshold is not None else definition.threshold
+            if not isinstance(model, str) or not model.strip() or not 0 <= threshold <= 1:
+                raise ValueError("Judge requires a model and threshold between 0 and 1")
+            scorer = judge if judge is not None else make_judge(provider, model, definition.rubric)
+            judges[metric] = (scorer, model, threshold, provider)
     if "dataset_version" in suite:
         report["dataset_version"] = suite["dataset_version"]
     if "source_balance" in suite:
@@ -75,16 +75,19 @@ def evaluate_suite(suite, selected_metrics, report, *, judge=None, judge_model=N
             case_result["scenario_family"] = case["scenario_family"]
         report["cases"].append(case_result)
         for metric in report["selected_metrics"]:
+            definition = definitions[metric]
             try:
                 if run.get("execution_error"):
                     raise ValueError("Captured run contains an execution error")
-                if metric == trajectory_quality.METRIC:
-                    result = trajectory_quality.evaluate(run, judge, judge_model, judge_threshold, repeats)
+                if isinstance(definition, JudgeMetric):
+                    scorer, model, threshold, provider = judges[metric]
+                    result = trajectory_quality.evaluate(run, scorer, model, threshold, repeats, definition.rubric_version)
+                    result["provider"] = provider
                 else:
-                    result = METRICS[metric](expected, run)
+                    result = EVALUATORS[definition.evaluator]({**definition.expected, **expected}, run)
             except ValueError as error:
                 result = {"status": "error", "reason": str(error)}
-            results[metric] = {**result, "metric_version": result.get("rubric_version", "1")}
+            results[metric] = {**result, "metric_type": definition.type, "metric_version": definition.version}
             if EXIT_CODES[result["status"]] > EXIT_CODES[report["status"]]:
                 report["status"] = result["status"]
     report["summary"] = summarize(report["cases"], report["selected_metrics"], suite.get("sampling"))
@@ -176,7 +179,8 @@ def main(argv=None):
     if argv and argv[0] == "import-harbor":
         return harbor_command(argv[1:])
     parser = argparse.ArgumentParser(description="Evaluate captured coding-agent and PR review runs.")
-    parser.add_argument("--list-metrics", action="store_true", help="List metric IDs and exit.")
+    parser.add_argument("--list-metrics", action="store_true", help="List metric IDs, types, and supported modes.")
+    parser.add_argument("--metrics-dir", type=Path, default=DEFAULT_DIRECTORY, help="Directory of YAML metric definitions.")
     inputs = parser.add_mutually_exclusive_group()
     inputs.add_argument("--suite", type=Path, help="Path to a JSON replay suite.")
     inputs.add_argument("--dataset", type=Path, help="Path to a versioned golden dataset directory.")
@@ -185,12 +189,18 @@ def main(argv=None):
     parser.add_argument("--repeats", type=int, default=1, help="Number of scores to request for each stochastic metric.")
     parser.add_argument("--mode", choices=("replay", "live"), default="replay", help="Enable a live judge in live mode.")
     parser.add_argument("--run-file", type=Path, help="Load fixed runs from a saved evaluation report.")
-    parser.add_argument("--judge-model", help="OpenAI model ID for a live trajectory judge.")
+    parser.add_argument("--judge-provider", choices=PROVIDERS, help="Override the provider in the YAML judge definition.")
+    parser.add_argument("--judge-model", help="Override the model in the YAML judge definition.")
     parser.add_argument("--judge-threshold", type=float, help="Minimum mean trajectory judge score to pass.")
     parser.add_argument("--report", type=Path, help="Write the evaluation report as JSON.")
     args = parser.parse_args(argv)
     if args.list_metrics:
-        print("\n".join(METRIC_IDS))
+        try:
+            for definition in load_metrics(args.metrics_dir).values():
+                print(f"{definition.id}\t{definition.type}\t{', '.join(definition.modes)}")
+        except (OSError, ValueError) as error:
+            print(error, file=sys.stderr)
+            return 2
         return 0
     if args.suite is None and args.dataset is None:
         parser.error("--suite or --dataset is required unless --list-metrics is used")
@@ -198,21 +208,17 @@ def main(argv=None):
         parser.error("--split requires --dataset")
     if args.repeats < 1:
         parser.error("--repeats must be a positive integer")
+    if args.report and args.report.resolve().is_relative_to(args.metrics_dir.resolve()) and args.report.suffix in (".yaml", ".yml"):
+        parser.error("Report path must be outside the YAML metric definitions")
 
     report = {"schema_version": 1, "mode": args.mode, "status": "pass", "cases": []}
     try:
         suite = load_dataset(args.dataset, args.split) if args.dataset is not None else read(args.suite)
         if args.run_file is not None:
             suite = use_saved_runs(suite, json.loads(args.run_file.read_text(encoding="utf-8")))
-        judge = None
-        if isinstance(suite, dict):
-            selected = args.metric or suite.get("metrics")
-            if isinstance(selected, list) and trajectory_quality.METRIC in selected:
-                if args.mode != "live" or not args.judge_model or args.judge_threshold is None:
-                    raise ValueError("trajectory-quality requires live mode, --judge-model, and --judge-threshold")
-                judge = openai_judge(args.judge_model)
         evaluate_suite(
-            suite, args.metric, report, judge=judge, judge_model=args.judge_model,
+            suite, args.metric, report, definitions=load_metrics(args.metrics_dir), mode=args.mode,
+            judge_provider=args.judge_provider, judge_model=args.judge_model,
             judge_threshold=args.judge_threshold, repeats=args.repeats,
         )
     except (OSError, ValueError) as error:

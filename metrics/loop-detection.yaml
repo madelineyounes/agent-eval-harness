@@ -1,0 +1,4 @@
+id: loop-detection
+type: deterministic
+version: "1"
+evaluator: loop-detection

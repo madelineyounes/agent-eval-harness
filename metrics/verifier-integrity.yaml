@@ -1,0 +1,4 @@
+id: verifier-integrity
+type: deterministic
+version: "1"
+evaluator: verifier-integrity

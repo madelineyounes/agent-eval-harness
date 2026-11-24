@@ -12,7 +12,7 @@ PR #24 closed #5. The [pagination example](../examples/pagination-v1) shows a pi
 
 Take one section at a time. Write the focused test first for behavior changes and record why it fails. Run `python -m unittest discover -s tests -v` and both [README smoke commands](../README.md) before opening the PR. Run Ponytail Review and resolve actionable findings. Use **What changed**, **Why**, and **How it was tested** in the PR. Add `Closes #N` after every acceptance check for that issue is satisfied. Verify the GitHub Actions `tests` job before merging.
 
-Use Python 3.12 and the standard library for replay. Keep live providers and task runners optional. Preserve the existing CLI exit codes: `0` for pass, `1` for failed evaluation, and `2` for invalid input or execution error. Keep replay independent of model credentials.
+Use Python 3.12 and install the pinned YAML parser from `requirements.txt`. Keep live providers and task runners optional. Preserve the existing CLI exit codes: `0` for pass, `1` for failed evaluation, and `2` for invalid input or execution error. Keep replay independent of model credentials.
 
 ## #6 Benchmark PR reviews with labeled findings
 

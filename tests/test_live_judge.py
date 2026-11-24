@@ -28,7 +28,7 @@ class LiveJudgeTests(unittest.TestCase):
 
             args = ["--suite", str(suite), "--run-file", str(saved), "--report", str(report), "--mode", "live",
                     "--metric", "trajectory-quality", "--judge-model", "fake", "--judge-threshold", "0.5", "--repeats", "2"]
-            with patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"}), patch("agent_eval.openai_judge.urlopen", response):
+            with patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"}), patch("agent_eval.judge_providers.urlopen", response):
                 self.assertEqual(main(args), 0)
                 self.assertEqual(len(requests), 2)
                 self.assertEqual(requests[0], requests[1])

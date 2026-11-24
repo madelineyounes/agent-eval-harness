@@ -4,13 +4,13 @@ import unittest
 from pathlib import Path
 
 from agent_eval.calibration import calibrate, draft_metric
-from agent_eval.cli import METRIC_IDS
+from agent_eval.metric_config import load_metrics
 
 
 class CalibrationTests(unittest.TestCase):
     def test_draft_writes_reviewable_files_outside_registry(self):
         with tempfile.TemporaryDirectory() as directory:
-            before = METRIC_IDS
+            before = load_metrics()
             seen = []
 
             def generator(metric_id, behavior, tool):
@@ -21,8 +21,8 @@ class CalibrationTests(unittest.TestCase):
             draft = draft_metric(Path(directory), "lookup-required", "Look up the catalog", "lookup", generator)
             self.assertEqual(seen, [("lookup-required", "Look up the catalog", "lookup")])
             self.assertEqual({path.name for path in draft.iterdir()}, {"metric.py", "test_metric.py", "rubric.md"})
-            self.assertEqual(METRIC_IDS, before)
-            self.assertNotIn("lookup-required", METRIC_IDS)
+            self.assertEqual(load_metrics(), before)
+            self.assertNotIn("lookup-required", before)
 
     def test_selects_threshold_on_development_and_reports_both_held_out_errors(self):
         fixture = json.loads(Path("examples/calibration-v1/scores.json").read_text())

@@ -1,0 +1,4 @@
+id: change-scope
+type: deterministic
+version: "1"
+evaluator: change-scope

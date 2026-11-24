@@ -17,7 +17,7 @@ class JudgeReportingTests(unittest.TestCase):
             {"id": "fixed", "group": "main", "expected": {}, "run": run},
         ]}
         report = {"status": "pass", "cases": []}
-        evaluate_suite(suite, None, report, judge=score, judge_model="fake", judge_threshold=0.5, repeats=2)
+        evaluate_suite(suite, None, report, mode="live", judge=score, judge_model="fake", judge_threshold=0.5, repeats=2)
         self.assertEqual(len(seen), 2)
         self.assertTrue(all(captured is run for captured in seen))
         self.assertEqual(report["dataset_version"], "v1")
