@@ -30,8 +30,14 @@ class PaginationExampleTests(unittest.TestCase):
                 for case_id, metrics in metrics_by_case.items()
             },
             {
-                "codex-pagination-fix": {"patch-verification": "pass", "completion-claim": "pass"},
-                "pagination-regression-control": {"patch-verification": "fail", "completion-claim": "fail"},
+                "codex-pagination-fix": {
+                    "patch-verification": "pass", "completion-claim": "pass",
+                    "change-scope": "pass", "verifier-integrity": "pass",
+                },
+                "pagination-regression-control": {
+                    "patch-verification": "fail", "completion-claim": "fail",
+                    "change-scope": "pass", "verifier-integrity": "pass",
+                },
             },
         )
         regression_metrics = metrics_by_case["pagination-regression-control"]
