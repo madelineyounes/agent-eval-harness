@@ -6,7 +6,7 @@ from pathlib import Path
 from agent_eval.calibration import calibrate, draft_metric
 from agent_eval.captures import use_saved_runs
 from agent_eval.docs_adapter import capture_docs
-from agent_eval.goldens import SPLITS, draft, load_dataset, promote, read, write_proposal
+from agent_eval.goldens import SPLITS, draft, draft_document, load_dataset, promote, read, write_proposal
 from agent_eval.harbor_import import import_trial
 from agent_eval.judge_providers import PROVIDERS, make_judge
 from agent_eval.metric_config import DEFAULT_DIRECTORY, EVALUATORS, JudgeMetric, load_metrics
@@ -101,7 +101,10 @@ def golden_command(command, argv):
     parser.add_argument("--dataset", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     if command == "draft-goldens":
-        parser.add_argument("--seed", action="append", required=True)
+        source = parser.add_mutually_exclusive_group(required=True)
+        source.add_argument("--seed", action="append")
+        source.add_argument("--source-file", type=Path, help="Approved UTF-8 documentation for a lookup draft.")
+        parser.add_argument("--document-id", help="Lookup ID used with --source-file.")
     else:
         parser.add_argument("--report", type=Path, required=True)
         parser.add_argument("--run-id", required=True)
@@ -111,7 +114,10 @@ def golden_command(command, argv):
     args = parser.parse_args(argv)
     try:
         if command == "draft-goldens":
-            paths = draft(args.dataset, args.seed, args.output)
+            if bool(args.source_file) != bool(args.document_id):
+                raise ValueError("Use --source-file and --document-id together")
+            paths = ([draft_document(args.dataset, args.source_file, args.document_id, args.output)]
+                     if args.source_file else draft(args.dataset, args.seed, args.output))
         else:
             paths = [promote(
                 args.dataset, read(args.report), args.run_id, args.output, args.reason,

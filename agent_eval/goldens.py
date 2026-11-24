@@ -137,6 +137,32 @@ def draft(root, seed_ids, output, generator=seed_variant, *, configuration=None)
     return proposals
 
 
+def draft_document(root, source, document_id, output):
+    root, source = Path(root), Path(source)
+    case_path(root, document_id)
+    dataset = load_dataset(root)
+    output = staging_root(root, output)
+    if not set(dataset["metrics"]) <= {"tool-call-contract", "response-expectations"}:
+        raise ValueError("Document drafts require a dataset with documentation lookup metrics")
+    case_id = f"doc-{document_id}-draft"
+    if any(case["id"] == case_id for case in dataset["cases"]):
+        raise ValueError(f"Generated case ID already exists: {case_id}")
+    content = source.read_bytes()
+    excerpt = next((line.strip() for line in content.decode("utf-8-sig").splitlines() if line.strip()), "")
+    if not excerpt:
+        raise ValueError("The approved document needs a nonempty first line")
+    proposal = output / f"{case_id}.json"
+    write_proposal(output, proposal, {
+        "id": case_id, "prompt": f"What does the {document_id} document say?",
+        "split": "development", "group": "main", "scenario_family": f"documentation-{document_id}",
+        "review_status": "draft", "capture": {"document_id": document_id},
+        "expected": {"answer_contains": [excerpt], "required_calls": [{"tool": "lookup_doc", "arguments": {"id": document_id}}]},
+        "provenance": {"source": "synthetic", "origin": source.name, "source_sha256": sha256(content).hexdigest(),
+                       "generator": {"name": "document-first-line", "version": "1"}},
+    })
+    return proposal
+
+
 def promote(root, report, run_id, output, reason, *, reviewed_case=None, excerpt=None):
     root = Path(root)
     dataset = load_dataset(root)

@@ -20,9 +20,18 @@ class CalibrationTests(unittest.TestCase):
 
             draft = draft_metric(Path(directory), "lookup-required", "Look up the catalog", "lookup", generator)
             self.assertEqual(seen, [("lookup-required", "Look up the catalog", "lookup")])
-            self.assertEqual({path.name for path in draft.iterdir()}, {"metric.py", "test_metric.py", "rubric.md"})
+            self.assertEqual({path.name for path in draft.iterdir()}, {"metric.py", "test_metric.py", "deterministic.yaml", "judge.yaml"})
             self.assertEqual(load_metrics(), before)
             self.assertNotIn("lookup-required", before)
+
+    def test_generated_metric_and_rubric_definitions_are_yaml(self):
+        with tempfile.TemporaryDirectory() as directory:
+            draft = draft_metric(Path(directory), "lookup-required", "Look up the policy", "lookup_doc")
+            definitions = load_metrics(draft)
+            self.assertEqual(definitions["lookup-required"].type, "deterministic")
+            self.assertEqual(definitions["lookup-required-judge"].type, "llm-judge")
+            self.assertIn("Look up the policy", definitions["lookup-required-judge"].rubric)
+            self.assertNotIn("lookup-required-judge", load_metrics())
 
     def test_selects_threshold_on_development_and_reports_both_held_out_errors(self):
         fixture = json.loads(Path("examples/calibration-v1/scores.json").read_text())
