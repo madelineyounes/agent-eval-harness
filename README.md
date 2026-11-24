@@ -41,8 +41,18 @@ The first command uses Git to apply each checked-in patch to a fresh copy of the
 | `completion-claim` | Checks whether a claim of completion has passing verifier evidence. |
 | `change-scope` | Checks recorded changed paths against the case's allowlist. |
 | `verifier-integrity` | Compares SHA-256 hashes for the case's protected verifier files. |
+| `execution-budget` | Compares observed token, call, retry, and time counts with case-specific limits. |
+| `loop-detection` | Checks consecutive identical tool calls and results against the allowed retry count. |
 
 Review findings use curated keys with a file path, symbol, and issue ID. Review free-text findings and map them to keys before replay. A suite declares default metrics. Repeat `--metric` to replace the defaults with your selection. Exit codes are `0` for pass, `1` for failed metrics, and `2` for invalid inputs or execution errors.
+
+The [synthetic operations suite](datasets/demo/operations.json) records `run.telemetry` and ordered `run.tool_calls`. For a budget, choose `input_tokens`, `output_tokens`, `model_calls`, `tool_calls`, `elapsed_ms`, or `retries` in `expected.budgets`. An observed value equal to its limit passes. Record unavailable telemetry as `null` or omit the field. A budget over an unavailable field returns exit `2`. For loop detection, set `expected.allowed_identical_retries`. Each consecutive group starts with one call followed by retries. A changed tool, arguments, or result starts a new group.
+
+```sh
+python -m agent_eval --suite datasets/demo/operations.json --report artifacts/operations.json
+```
+
+The replay exits `1`. The report identifies the exceeded tool-call budget and the lookup that retried twice with the same timeout.
 
 The current CLI scores captured verifier outcomes. The [spec](docs/spec.md) describes agent execution, trace metrics, reporting, and golden promotion.
 
