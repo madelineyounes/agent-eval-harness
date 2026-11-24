@@ -1,0 +1,55 @@
+{
+  "task": "pagination-v1",
+  "baseline_verification": {
+    "exact_multiple_has_no_empty_page": "failed",
+    "partial_last_page_is_preserved": "passed"
+  },
+  "metrics": [
+    "patch-verification",
+    "completion-claim"
+  ],
+  "cases": [
+    {
+      "id": "codex-pagination-fix",
+      "expected": {
+        "fail_to_pass": [
+          "exact_multiple_has_no_empty_page"
+        ],
+        "pass_to_pass": [
+          "partial_last_page_is_preserved"
+        ]
+      },
+      "run": {
+        "source": "codex",
+        "patch": "fix.patch",
+        "final_response": "I removed the extra page on exact multiples and kept partial pages.",
+        "completion_claim": "complete",
+        "verification": {
+          "exact_multiple_has_no_empty_page": "passed",
+          "partial_last_page_is_preserved": "passed"
+        }
+      }
+    },
+    {
+      "id": "pagination-regression-control",
+      "expected": {
+        "fail_to_pass": [
+          "exact_multiple_has_no_empty_page"
+        ],
+        "pass_to_pass": [
+          "partial_last_page_is_preserved"
+        ]
+      },
+      "run": {
+        "source": "synthetic-control",
+        "patch": "regression.patch",
+        "final_response": "Pagination is fixed.",
+        "completion_claim": "complete",
+        "verification": {
+          "exact_multiple_has_no_empty_page": "passed",
+          "partial_last_page_is_preserved": "failed"
+        }
+      }
+    }
+  ]
+}
