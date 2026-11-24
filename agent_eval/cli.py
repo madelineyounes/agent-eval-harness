@@ -5,7 +5,8 @@ from pathlib import Path
 
 from agent_eval.calibration import calibrate, draft_metric
 from agent_eval.captures import use_saved_runs
-from agent_eval.goldens import SPLITS, draft, load_dataset, promote, read
+from agent_eval.goldens import SPLITS, draft, load_dataset, promote, read, write_proposal
+from agent_eval.harbor_import import import_trial
 from agent_eval.metrics import (
     change_scope,
     completion_claim,
@@ -75,6 +76,8 @@ def evaluate_suite(suite, selected_metrics, report, *, judge=None, judge_model=N
         report["cases"].append(case_result)
         for metric in report["selected_metrics"]:
             try:
+                if run.get("execution_error"):
+                    raise ValueError("Captured run contains an execution error")
                 if metric == trajectory_quality.METRIC:
                     result = trajectory_quality.evaluate(run, judge, judge_model, judge_threshold, repeats)
                 else:
@@ -138,12 +141,40 @@ def calibration_command(command, argv):
     return 0
 
 
+def harbor_command(argv):
+    parser = argparse.ArgumentParser(prog="python -m agent_eval import-harbor")
+    parser.add_argument("--trial", type=Path, required=True)
+    parser.add_argument("--dataset", type=Path, required=True)
+    parser.add_argument("--case-id", required=True)
+    parser.add_argument("--output", type=Path, required=True)
+    args = parser.parse_args(argv)
+    try:
+        dataset = load_dataset(args.dataset)
+        case = next((case for case in dataset["cases"] if case["id"] == args.case_id), None)
+        if case is None:
+            raise ValueError(f"Unknown dataset case {args.case_id}")
+        if any(args.output.resolve().is_relative_to(source.resolve()) for source in (args.trial, args.dataset)):
+            raise ValueError("Import output must be outside the trial and dataset")
+        run = import_trial(read(args.trial / "result.json"), read(args.trial / "agent/trajectory.json"))
+        if run["task"] != case.get("harbor_task"):
+            raise ValueError(f"Harbor task does not match reviewed case {args.case_id}")
+        suite = {**dataset, "cases": [{**case, "run": run}]}
+        write_proposal(args.output.parent.resolve(), args.output, suite)
+    except (OSError, ValueError) as error:
+        print(error, file=sys.stderr)
+        return 2
+    print(args.output)
+    return 0
+
+
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
     if argv and argv[0] in ("draft-goldens", "promote"):
         return golden_command(argv[0], argv[1:])
     if argv and argv[0] in ("draft-metric", "calibrate-metric"):
         return calibration_command(argv[0], argv[1:])
+    if argv and argv[0] == "import-harbor":
+        return harbor_command(argv[1:])
     parser = argparse.ArgumentParser(description="Evaluate captured coding-agent and PR review runs.")
     parser.add_argument("--list-metrics", action="store_true", help="List metric IDs and exit.")
     inputs = parser.add_mutually_exclusive_group()

@@ -1,0 +1,12 @@
+{
+  "id": "9cd27316-8456-5b1c-9a24-614a65642fd5",
+  "task_name": "agent-eval-harness/hello-file",
+  "trial_name": "hello-example",
+  "trial_uri": null,
+  "task_checksum": "a15e123b616f597e4ac0ec25eeca04bee4fa2ea0436baeff45daa1ccb0f53f515",
+  "agent_info": {"name": "scripted-hello", "version": "1.0.0"},
+  "agent_result": null,
+  "verifier_result": {"rewards": {"created_hello_file": 1, "existing_file_preserved": 1}},
+  "exception_info": null,
+  "agent_execution": {"started_at": "2026-09-12T00:00:00+00:00", "finished_at": "2026-09-12T00:00:00.020+00:00"}
+}
