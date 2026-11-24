@@ -1,0 +1,14 @@
+{
+  "id": "hello-file",
+  "harbor_task": "hello-file",
+  "split": "development",
+  "group": "main",
+  "scenario_family": "create-file-preserve-existing",
+  "prompt": "Create hello.txt with Hello, world! and preserve the existing file.",
+  "provenance": {"source": "synthetic", "origin": "examples/harbor-v1/hello-file"},
+  "expected": {
+    "fail_to_pass": ["created_hello_file"],
+    "pass_to_pass": ["existing_file_preserved"],
+    "allowed_identical_retries": 0
+  }
+}

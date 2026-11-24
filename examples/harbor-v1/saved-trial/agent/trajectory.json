@@ -1,0 +1,19 @@
+{
+  "schema_version": "ATIF-v1.8",
+  "session_id": "hello-example",
+  "agent": {"name": "scripted-hello", "version": "1.0.0"},
+  "steps": [
+    {"step_id": 1, "source": "user", "message": "Create hello.txt with Hello, world! and preserve the existing file."},
+    {
+      "step_id": 2, "source": "agent", "message": "", "llm_call_count": 0,
+      "tool_calls": [{"tool_call_id": "write", "function_name": "shell", "arguments": {"command": "write hello.txt"}}],
+      "observation": {"results": [{"source_call_id": "write", "content": "", "extra": {"return_code": 0}}]}
+    },
+    {
+      "step_id": 3, "source": "agent", "message": "", "llm_call_count": 0,
+      "tool_calls": [{"tool_call_id": "read", "function_name": "shell", "arguments": {"command": "read hello.txt"}}],
+      "observation": {"results": [{"source_call_id": "read", "content": "Hello, world!\n", "extra": {"return_code": 0}}]}
+    },
+    {"step_id": 4, "source": "agent", "message": "Created hello.txt.", "llm_call_count": 0}
+  ]
+}

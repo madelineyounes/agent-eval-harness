@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "dataset_version": "harbor-hello-v1",
+  "metrics": ["patch-verification", "loop-detection"],
+  "splits": {"development": ["hello-file"], "held-out": []}
+}

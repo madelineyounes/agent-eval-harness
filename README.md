@@ -77,6 +77,8 @@ Replay the [starter golden dataset](datasets/goldens) or point `--dataset` at a 
 
 Use the [metric calibration guide](docs/metric-calibration.md) to create a draft evaluator and compare its scores against development and held-out labels.
 
+The [Harbor example](examples/harbor-v1) imports a native trial and its ATIF trajectory, replays the existing verifier and loop metrics, and stages a golden reference proposal.
+
 The current CLI scores captured verifier outcomes. The [spec](docs/spec.md) describes agent execution, trace metrics, reporting, and golden promotion.
 
 ## Contributing
