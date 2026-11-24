@@ -6,7 +6,7 @@ Use the [build plan](build-plan.md) for implementation order, starter files, and
 
 ## Purpose
 
-Build a public Python evaluation harness that runs selected metrics against an agent's responses and tool traces. The repository includes your own Python metric files so a reviewer can inspect the scoring logic, run an individual metric, or run a suite of metrics together in CI.
+Build a public Python evaluation harness that runs selected metrics against an agent's responses and tool traces. Editable YAML definitions identify each metric as deterministic or LLM judge. The repository includes the Python evaluators so a reviewer can inspect the scoring logic, run an individual metric, or run a suite in CI.
 
 The first examples cover PR review and coding agents. A reviewer should surface known actionable issues and stay quiet on clean changes. A coding agent should fix the requested behavior, preserve existing behavior, and substantiate any claim of completion.
 
@@ -59,7 +59,7 @@ The Git-backed golden dataset remains the source for reviewed cases, expected be
 
 ## Metric files and selection
 
-Each metric lives in its own Python module under `metrics/`. A metric receives a case and the observed agent run. It returns a pass or fail result with a reason, plus a numeric score and threshold when applicable. The harness handles case selection, execution, reporting, and exit codes.
+Each metric has a YAML definition under `metrics/`. Deterministic evaluators live under `agent_eval/metrics/`. A metric receives a case and the observed agent run. It returns a pass or fail result with a reason, plus a numeric score and threshold when applicable. The harness handles case selection, execution, reporting, and exit codes.
 
 | Initial metric | File | What it checks |
 | --- | --- | --- |
@@ -85,7 +85,7 @@ Write judge rubrics around behavior visible in the trace. Score whether the agen
 - **Live.** Capture one agent run per case against the selected task environment, or load a saved run. Apply the selected metrics to the fixed response and trace. For judge metrics, record the model and rubric version. A judge error is an execution error.
 - **Gate.** Any failed selected metric fails the suite. An empty suite, unknown or incompatible metric ID, or missing or skipped case result for a selected metric is an execution error. An expected tool timeout is a case input and can still produce a passing evaluation.
 
-The proposed implementation runs replay in Python and uses `deepeval test run` for the live suite. This keeps the required check independent of judge credentials and gives live scoring a documented runner. [DeepEval CI documentation](https://deepeval.com/docs/evaluation-unit-testing-in-ci-cd)
+Live judging uses the provider selected in YAML. OpenAI, Anthropic, and local Ollama score captured traces through the same rubric interface. Prefer a judge from a different model family than the agent and check its agreement with human labels. The PR workflow runs deterministic replay without judge credentials.
 
 ## Repeat a metric on a fixed run
 

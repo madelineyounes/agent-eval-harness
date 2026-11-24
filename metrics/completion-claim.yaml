@@ -1,0 +1,4 @@
+id: completion-claim
+type: deterministic
+version: "1"
+evaluator: completion-claim

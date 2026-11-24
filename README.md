@@ -1,10 +1,11 @@
 # Agent eval harness
 
-Replay captured PR reviews and coding-agent runs with selectable Python metrics. The first examples use synthetic JSON fixtures. Python 3.12 or later is enough to run them from a checkout.
+Replay captured PR reviews and coding-agent runs with selectable YAML metrics. The first examples use synthetic JSON fixtures. Use Python 3.12 or later and install the YAML parser from a checkout. Replay works offline after setup.
 
 Download the v0.1.0 source and the passing and deliberately failing replay reports from the [first runnable release](https://github.com/madelineyounes/agent-eval-harness/releases/tag/v0.1.0).
 
 ```sh
+python -m pip install -r requirements.txt
 python -m unittest discover -s tests -v
 python -m agent_eval --list-metrics
 python -m agent_eval --suite datasets/smoke/review.json --report artifacts/review.json
@@ -36,6 +37,8 @@ The first command uses Git to apply each checked-in patch to a fresh copy of the
 
 ## Metrics
 
+Edit metric definitions under [metrics/](metrics). `--list-metrics` shows the ID, type, and supported modes. The [metric YAML guide](docs/metric-yaml.md) explains deterministic defaults and judge settings.
+
 | Metric | What it checks |
 | --- | --- |
 | `review-findings` | Counts matched, unexpected, missed, and duplicate findings. Reports precision and recall when their denominators are nonzero. |
@@ -62,7 +65,7 @@ Confidence intervals use 2,000 bootstrap resamples and seed `0`. A fixed-run int
 
 ## Score a fixed run with a live judge
 
-The optional `trajectory-quality` metric uses the OpenAI Responses API to score the evidence behind a captured answer. The `trajectory-evidence-v1` rubric scores absent or contradictory evidence as `0`, partial support as `0.5`, and support for the main claim as `1`. Each repeat cites numbered tool calls. The example uses `gpt-5-mini-2025-08-07` and a mean threshold of `0.5`. [OpenAI GPT-5 mini documentation](https://developers.openai.com/api/docs/models/gpt-5-mini)
+The optional `trajectory-quality` metric scores the evidence behind a captured answer. Its YAML rubric scores absent or contradictory evidence as `0`, partial support as `0.5`, and support for the main claim as `1`. Each repeat cites numbered tool calls. The YAML defaults use OpenAI `gpt-5-mini-2025-08-07` and a mean threshold of `0.5`. Anthropic and local Ollama are also available. [Judge setup](docs/metric-yaml.md)
 
 Set `OPENAI_API_KEY` for live requests. Run the first command to save the fixed capture. The second command sends its final answer and tool calls to the judge for ten scoring requests. Use captures approved for that provider. The suite and saved report must have the same `dataset_version` and matching case IDs.
 
