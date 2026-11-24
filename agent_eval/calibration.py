@@ -1,5 +1,8 @@
 import re
 from pathlib import Path
+from textwrap import indent
+
+import yaml
 
 from agent_eval.goldens import SPLITS, nonempty
 
@@ -34,12 +37,25 @@ def draft_metric(output, metric_id, behavior, tool, generator=metric_template):
     files = generator(metric_id, behavior.strip(), tool.strip())
     if not isinstance(files, dict) or files.keys() != {"metric.py", "test_metric.py", "rubric.md"} or not all(map(nonempty, files.values())):
         raise ValueError("Generator must return a metric draft, tests, and rubric")
+    deterministic = {
+        "id": metric_id, "type": "deterministic", "version": "draft-v1", "evaluator": "tool-call-contract",
+        "expected": {"required_calls": [{"tool": tool.strip(), "arguments": {}}]},
+    }
+    judge = {
+        "id": f"{metric_id}-judge", "type": "llm-judge", "version": "draft-v1",
+        "provider": "openai", "model": "gpt-5-mini-2025-08-07", "threshold": 0.5, "rubric_version": "draft-v1",
+    }
+    generated = {
+        "metric.py": files["metric.py"], "test_metric.py": files["test_metric.py"],
+        "deterministic.yaml": yaml.safe_dump(deterministic, sort_keys=False),
+        "judge.yaml": yaml.safe_dump(judge, sort_keys=False) + "rubric: |-\n" + indent(files["rubric.md"].rstrip(), "  ") + "\n",
+    }
     root = Path(output).resolve()
     destination = root / metric_id
     if not destination.resolve().is_relative_to(root):
         raise ValueError("Draft path escapes the staging directory")
     destination.mkdir(parents=True)
-    for name, contents in files.items():
+    for name, contents in generated.items():
         (destination / name).write_text(contents, encoding="utf-8", newline="\n")
     return destination
 

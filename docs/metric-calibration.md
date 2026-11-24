@@ -1,13 +1,13 @@
 # Draft and calibrate a metric
 
-Describe an observable behavior and name the tool involved. Generate a starter evaluator, failing tests, and an anchored trace rubric in a staging directory.
+Describe an observable behavior and name the tool involved. Generate editable `deterministic.yaml` and `judge.yaml` definitions, a Python evaluator stub, and failing tests in a staging directory.
 
 ```sh
 python -m agent_eval draft-metric --id catalog-lookup-quality --behavior "Check whether the answer uses catalog lookup evidence" --tool lookup --output artifacts/metric-drafts
 python -m unittest discover -s artifacts/metric-drafts/catalog-lookup-quality -v
 ```
 
-Review the draft tests and confirm that they fail at the evaluator stub. Fill in the observable rule and rerun them. The draft stays outside the metric registry. Review the rubric anchors against concrete traces before scoring cases.
+Review the draft tests and confirm that they fail at the evaluator stub. Use `deterministic.yaml` when the call contract covers the rule. For a new rule, implement the evaluator and rerun its tests. Review the rubric in `judge.yaml` against concrete traces before scoring cases. Use `--metrics-dir` to try staged definitions explicitly.
 
 ## Freeze the threshold before held-out evaluation
 

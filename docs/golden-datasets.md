@@ -13,6 +13,8 @@ python -m agent_eval draft-goldens --dataset datasets/goldens --seed clean-catal
 
 The default generator asks for a concise response to a reviewed development seed. Each draft records the seed ID, source revision, generator, and proposed assertions. Verify those assertions against the task and check for duplicate behavior before approving a draft. Generated variants stay synthetic after review.
 
+To draft from approved UTF-8 text, use a dataset manifest with the documentation lookup metrics and pass `--source-file path/to/policy.txt --document-id returns` in place of `--seed`. The draft proposes a lookup and uses the document's first nonempty line as the answer phrase. It records the source filename and SHA-256 hash. Check that the proposed phrase answers the prompt and that the document can be included in the task environment before approving the case.
+
 ## Propose a promotion
 
 ```sh

@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 from agent_eval.cli import main
-from agent_eval.goldens import draft, load_dataset, promote
+from agent_eval.goldens import draft, draft_document, load_dataset, promote
 
 
 def write(path, value):
@@ -23,6 +23,23 @@ def case(case_id, source, split="development", family=None):
 
 
 class GoldenTests(unittest.TestCase):
+    def test_drafts_an_approved_document_with_source_provenance(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            dataset = root / "dataset"
+            write(dataset / "manifest.json", {"schema_version": 1, "dataset_version": "docs-v1",
+                                              "metrics": ["tool-call-contract", "response-expectations"],
+                                              "splits": {"development": [], "held-out": []}})
+            source = root / "returns.txt"
+            source.write_text("Returns are accepted within 30 days.\n", encoding="utf-8")
+            path = draft_document(dataset, source, "returns", root / "drafts")
+            candidate = json.loads(path.read_text())
+            self.assertEqual(candidate["review_status"], "draft")
+            self.assertEqual(candidate["provenance"]["source"], "synthetic")
+            self.assertEqual(candidate["provenance"]["origin"], "returns.txt")
+            self.assertEqual(len(candidate["provenance"]["source_sha256"]), 64)
+            self.assertEqual(candidate["expected"]["answer_contains"], ["Returns are accepted within 30 days."])
+            self.assertEqual(load_dataset(dataset)["cases"], [])
     def test_manifest_validation_and_distinct_source_balance(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
