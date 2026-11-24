@@ -10,8 +10,10 @@ from agent_eval.metrics import (
     loop_detection,
     patch_verification,
     review_findings,
+    trajectory_quality,
     verifier_integrity,
 )
+from agent_eval.reporting import GROUPS, summarize
 
 
 METRICS = {
@@ -24,9 +26,10 @@ METRICS = {
     "loop-detection": loop_detection.evaluate,
 }
 EXIT_CODES = {"pass": 0, "fail": 1, "error": 2}
+METRIC_IDS = (*METRICS, trajectory_quality.METRIC)
 
 
-def evaluate_suite(suite, selected_metrics, report):
+def evaluate_suite(suite, selected_metrics, report, *, judge=None, judge_model=None, judge_threshold=None, repeats=1):
     if not isinstance(suite, dict):
         raise ValueError("Suite must be a JSON object")
     cases = suite.get("cases")
@@ -36,10 +39,12 @@ def evaluate_suite(suite, selected_metrics, report):
     if not isinstance(metrics, list) or not metrics:
         raise ValueError("Select at least one metric")
     for metric in metrics:
-        if not isinstance(metric, str) or metric not in METRICS:
+        if not isinstance(metric, str) or metric not in METRIC_IDS:
             raise ValueError(f"Unknown metric {metric!r}")
 
     report["selected_metrics"] = list(dict.fromkeys(metrics))
+    if "dataset_version" in suite:
+        report["dataset_version"] = suite["dataset_version"]
     seen_cases = set()
     for case in cases:
         if not isinstance(case, dict):
@@ -54,15 +59,24 @@ def evaluate_suite(suite, selected_metrics, report):
             raise ValueError(f"{case_id} requires expected and run objects")
 
         results = {}
-        report["cases"].append({"id": case_id, "metrics": results})
+        case_result = {"id": case_id, "metrics": results, "run": run}
+        if "id" in run:
+            case_result["run_id"] = run["id"]
+        if case.get("group") in GROUPS:
+            case_result["group"] = case["group"]
+        report["cases"].append(case_result)
         for metric in report["selected_metrics"]:
             try:
-                result = METRICS[metric](expected, run)
+                if metric == trajectory_quality.METRIC:
+                    result = trajectory_quality.evaluate(run, judge, judge_model, judge_threshold, repeats)
+                else:
+                    result = METRICS[metric](expected, run)
             except ValueError as error:
                 result = {"status": "error", "reason": str(error)}
             results[metric] = result
             if EXIT_CODES[result["status"]] > EXIT_CODES[report["status"]]:
                 report["status"] = result["status"]
+    report["summary"] = summarize(report["cases"], report["selected_metrics"])
 
 
 def main(argv=None):
@@ -70,18 +84,21 @@ def main(argv=None):
     parser.add_argument("--list-metrics", action="store_true", help="List metric IDs and exit.")
     parser.add_argument("--suite", type=Path, help="Path to a JSON replay suite.")
     parser.add_argument("--metric", action="append", help="Select a metric, replacing suite defaults. Repeat for multiple metrics.")
+    parser.add_argument("--repeats", type=int, default=1, help="Number of scores to request for each stochastic metric.")
     parser.add_argument("--report", type=Path, help="Write the evaluation report as JSON.")
     args = parser.parse_args(argv)
     if args.list_metrics:
-        print("\n".join(METRICS))
+        print("\n".join(METRIC_IDS))
         return 0
     if args.suite is None:
         parser.error("--suite is required unless --list-metrics is used")
+    if args.repeats < 1:
+        parser.error("--repeats must be a positive integer")
 
     report = {"schema_version": 1, "mode": "replay", "status": "pass", "cases": []}
     try:
         suite = json.loads(args.suite.read_text(encoding="utf-8"))
-        evaluate_suite(suite, args.metric, report)
+        evaluate_suite(suite, args.metric, report, repeats=args.repeats)
     except (OSError, ValueError) as error:
         report.update(status="error", reason=str(error))
 

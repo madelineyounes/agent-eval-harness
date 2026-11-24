@@ -54,6 +54,8 @@ python -m agent_eval --suite datasets/demo/operations.json --report artifacts/op
 
 The replay exits `1`. The report identifies the exceeded tool-call budget and the lookup that retried twice with the same timeout.
 
+Reports retain each captured run and summarize results overall and by the optional case `group` values `main` and `edge`. The pass rate counts completed cases, while the completion rate includes execution errors in its denominator. Each completed case contributes one score to the metric mean when it has a numeric result.
+
 The current CLI scores captured verifier outcomes. The [spec](docs/spec.md) describes agent execution, trace metrics, reporting, and golden promotion.
 
 ## Contributing
