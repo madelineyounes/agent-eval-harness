@@ -36,6 +36,8 @@ python -m agent_eval --suite examples/pagination-v1/capture.json --report artifa
 
 The first command uses Git to apply each checked-in patch to a fresh copy of the baseline. The verifier stays outside that copy and records the changed paths and its SHA-256 hash before and after the run. The second command replays the capture and exits with `1` because the comparison patch drops the partial page. The Codex patch passes all four checks.
 
+For the checked-in patches, the verifier can run directly on your machine. Use `python examples/pagination-v1/verify.py --isolated` to run candidate code in Docker. The container receives a read-only mount of the candidate directory and has no network access. The host verifier checks the returned values against its expected results. CI checks that both execution modes reproduce the saved capture.
+
 ## Metrics
 
 Edit metric definitions under [metrics/](metrics). `--list-metrics` shows the ID, type, and supported modes. The [metric YAML guide](docs/metric-yaml.md) explains deterministic defaults and judge settings.
