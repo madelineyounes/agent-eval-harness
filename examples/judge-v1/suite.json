@@ -1,0 +1,19 @@
+{
+  "dataset_version": "judge-example-v1",
+  "metrics": ["loop-detection"],
+  "cases": [
+    {
+      "id": "catalog-availability",
+      "group": "main",
+      "scenario_family": "catalog-lookup",
+      "expected": {"allowed_identical_retries": 0},
+      "run": {
+        "id": "synthetic-catalog-lookup",
+        "final_response": "The catalog entry for SKU-1 is available.",
+        "tool_calls": [
+          {"tool": "lookup", "arguments": {"id": "SKU-1"}, "result": {"available": true}}
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,189 @@
+{
+  "schema_version": 1,
+  "mode": "live",
+  "source": "synthetic judge scores",
+  "status": "pass",
+  "cases": [
+    {
+      "id": "catalog-availability",
+      "metrics": {
+        "trajectory-quality": {
+          "status": "pass",
+          "reason": "Applied the threshold to the mean judge score",
+          "model": "synthetic",
+          "rubric_version": "trajectory-evidence-v1",
+          "threshold": 0.5,
+          "score": 0.75,
+          "sample_stddev": 0.26352313834736496,
+          "requested_repeats": 10,
+          "completed_repeats": 10,
+          "repeats": [
+            {
+              "repeat": 1,
+              "score": 0.5,
+              "reason": "Synthetic partial grade for step 1."
+            },
+            {
+              "repeat": 2,
+              "score": 1,
+              "reason": "Synthetic full grade for step 1."
+            },
+            {
+              "repeat": 3,
+              "score": 0.5,
+              "reason": "Synthetic partial grade for step 1."
+            },
+            {
+              "repeat": 4,
+              "score": 1,
+              "reason": "Synthetic full grade for step 1."
+            },
+            {
+              "repeat": 5,
+              "score": 0.5,
+              "reason": "Synthetic partial grade for step 1."
+            },
+            {
+              "repeat": 6,
+              "score": 1,
+              "reason": "Synthetic full grade for step 1."
+            },
+            {
+              "repeat": 7,
+              "score": 0.5,
+              "reason": "Synthetic partial grade for step 1."
+            },
+            {
+              "repeat": 8,
+              "score": 1,
+              "reason": "Synthetic full grade for step 1."
+            },
+            {
+              "repeat": 9,
+              "score": 0.5,
+              "reason": "Synthetic partial grade for step 1."
+            },
+            {
+              "repeat": 10,
+              "score": 1,
+              "reason": "Synthetic full grade for step 1."
+            }
+          ],
+          "confidence_interval": {
+            "method": "percentile_bootstrap",
+            "sampled_unit": "judge_repeat",
+            "sample_size": 10,
+            "seed": 0,
+            "resamples": 2000,
+            "confidence": 0.95,
+            "bounds": [
+              0.6,
+              0.9
+            ],
+            "reason": null
+          }
+        }
+      },
+      "run": {
+        "id": "synthetic-catalog-lookup",
+        "final_response": "The catalog entry for SKU-1 is available.",
+        "tool_calls": [
+          {
+            "tool": "lookup",
+            "arguments": {
+              "id": "SKU-1"
+            },
+            "result": {
+              "available": true
+            }
+          }
+        ]
+      },
+      "run_id": "synthetic-catalog-lookup",
+      "group": "main",
+      "scenario_family": "catalog-lookup"
+    }
+  ],
+  "selected_metrics": [
+    "trajectory-quality"
+  ],
+  "dataset_version": "judge-example-v1",
+  "summary": {
+    "cases": {
+      "overall": {
+        "counts": {
+          "pass": 1,
+          "fail": 0,
+          "error": 0
+        },
+        "pass_rate": 1.0,
+        "completion_rate": 1.0,
+        "mean_score": null
+      },
+      "main": {
+        "counts": {
+          "pass": 1,
+          "fail": 0,
+          "error": 0
+        },
+        "pass_rate": 1.0,
+        "completion_rate": 1.0,
+        "mean_score": null
+      },
+      "edge": {
+        "counts": {
+          "pass": 0,
+          "fail": 0,
+          "error": 0
+        },
+        "pass_rate": null,
+        "completion_rate": null,
+        "mean_score": null
+      }
+    },
+    "metrics": {
+      "trajectory-quality": {
+        "overall": {
+          "counts": {
+            "pass": 1,
+            "fail": 0,
+            "error": 0
+          },
+          "pass_rate": 1.0,
+          "completion_rate": 1.0,
+          "mean_score": 0.75,
+          "confidence_interval": {
+            "method": "stratified_percentile_bootstrap",
+            "sampled_unit": "case",
+            "sample_size": 1,
+            "seed": 0,
+            "resamples": 2000,
+            "confidence": 0.95,
+            "bounds": null,
+            "reason": "The suite does not declare independent case sampling"
+          }
+        },
+        "main": {
+          "counts": {
+            "pass": 1,
+            "fail": 0,
+            "error": 0
+          },
+          "pass_rate": 1.0,
+          "completion_rate": 1.0,
+          "mean_score": 0.75
+        },
+        "edge": {
+          "counts": {
+            "pass": 0,
+            "fail": 0,
+            "error": 0
+          },
+          "pass_rate": null,
+          "completion_rate": null,
+          "mean_score": null
+        }
+      }
+    }
+  }
+}
