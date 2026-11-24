@@ -1,0 +1,14 @@
+{
+  "id": "clean-catalog-review",
+  "split": "development",
+  "group": "main",
+  "scenario_family": "catalog-pr-review",
+  "prompt": "Review the supplied clean catalog diff for actionable regressions.",
+  "provenance": {"source": "synthetic", "origin": "examples/review-v1/clean.patch"},
+  "expected": {"review_findings": []},
+  "run": {
+    "id": "synthetic-clean-catalog-review-v1",
+    "agent_version": "curated-review-v1",
+    "review_findings": []
+  }
+}

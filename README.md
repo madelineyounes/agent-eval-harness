@@ -71,6 +71,10 @@ python -m agent_eval --suite examples/judge-v1/suite.json --mode live --run-file
 
 The [synthetic judge report](examples/judge-v1/report.json) shows per-repeat scores and the two interval fields. The manually triggered **Live judge example** workflow uses the same commands and reads its key from GitHub Actions secrets.
 
+## Golden datasets
+
+Replay the [starter golden dataset](datasets/goldens) or point `--dataset` at a private checkout. The [golden dataset guide](docs/golden-datasets.md) covers source balance, candidate generation, and reviewable promotion proposals.
+
 The current CLI scores captured verifier outcomes. The [spec](docs/spec.md) describes agent execution, trace metrics, reporting, and golden promotion.
 
 ## Contributing

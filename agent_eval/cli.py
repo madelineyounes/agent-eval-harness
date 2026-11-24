@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 from agent_eval.captures import use_saved_runs
+from agent_eval.goldens import SPLITS, draft, load_dataset, promote, read
 from agent_eval.metrics import (
     change_scope,
     completion_claim,
@@ -47,6 +48,8 @@ def evaluate_suite(suite, selected_metrics, report, *, judge=None, judge_model=N
     report["selected_metrics"] = list(dict.fromkeys(metrics))
     if "dataset_version" in suite:
         report["dataset_version"] = suite["dataset_version"]
+    if "source_balance" in suite:
+        report["source_balance"] = suite["source_balance"]
     seen_cases = set()
     for case in cases:
         if not isinstance(case, dict):
@@ -77,16 +80,52 @@ def evaluate_suite(suite, selected_metrics, report, *, judge=None, judge_model=N
                     result = METRICS[metric](expected, run)
             except ValueError as error:
                 result = {"status": "error", "reason": str(error)}
-            results[metric] = result
+            results[metric] = {**result, "metric_version": result.get("rubric_version", "1")}
             if EXIT_CODES[result["status"]] > EXIT_CODES[report["status"]]:
                 report["status"] = result["status"]
     report["summary"] = summarize(report["cases"], report["selected_metrics"], suite.get("sampling"))
 
 
+def golden_command(command, argv):
+    parser = argparse.ArgumentParser(prog=f"python -m agent_eval {command}")
+    parser.add_argument("--dataset", type=Path, required=True)
+    parser.add_argument("--output", type=Path, required=True)
+    if command == "draft-goldens":
+        parser.add_argument("--seed", action="append", required=True)
+    else:
+        parser.add_argument("--report", type=Path, required=True)
+        parser.add_argument("--run-id", required=True)
+        parser.add_argument("--reason", required=True)
+        parser.add_argument("--reviewed-case", type=Path)
+        parser.add_argument("--excerpt-file", type=Path)
+    args = parser.parse_args(argv)
+    try:
+        if command == "draft-goldens":
+            paths = draft(args.dataset, args.seed, args.output)
+        else:
+            paths = [promote(
+                args.dataset, read(args.report), args.run_id, args.output, args.reason,
+                reviewed_case=read(args.reviewed_case) if args.reviewed_case else None,
+                excerpt=read(args.excerpt_file) if args.excerpt_file else None,
+            )]
+    except (OSError, ValueError) as error:
+        print(error, file=sys.stderr)
+        return 2
+    for path in paths:
+        print(path)
+    return 0
+
+
 def main(argv=None):
+    argv = sys.argv[1:] if argv is None else argv
+    if argv and argv[0] in ("draft-goldens", "promote"):
+        return golden_command(argv[0], argv[1:])
     parser = argparse.ArgumentParser(description="Evaluate captured coding-agent and PR review runs.")
     parser.add_argument("--list-metrics", action="store_true", help="List metric IDs and exit.")
-    parser.add_argument("--suite", type=Path, help="Path to a JSON replay suite.")
+    inputs = parser.add_mutually_exclusive_group()
+    inputs.add_argument("--suite", type=Path, help="Path to a JSON replay suite.")
+    inputs.add_argument("--dataset", type=Path, help="Path to a versioned golden dataset directory.")
+    parser.add_argument("--split", choices=SPLITS, help="Select one split of a golden dataset.")
     parser.add_argument("--metric", action="append", help="Select a metric, replacing suite defaults. Repeat for multiple metrics.")
     parser.add_argument("--repeats", type=int, default=1, help="Number of scores to request for each stochastic metric.")
     parser.add_argument("--mode", choices=("replay", "live"), default="replay", help="Enable a live judge in live mode.")
@@ -98,14 +137,16 @@ def main(argv=None):
     if args.list_metrics:
         print("\n".join(METRIC_IDS))
         return 0
-    if args.suite is None:
-        parser.error("--suite is required unless --list-metrics is used")
+    if args.suite is None and args.dataset is None:
+        parser.error("--suite or --dataset is required unless --list-metrics is used")
+    if args.split and args.dataset is None:
+        parser.error("--split requires --dataset")
     if args.repeats < 1:
         parser.error("--repeats must be a positive integer")
 
     report = {"schema_version": 1, "mode": args.mode, "status": "pass", "cases": []}
     try:
-        suite = json.loads(args.suite.read_text(encoding="utf-8"))
+        suite = load_dataset(args.dataset, args.split) if args.dataset is not None else read(args.suite)
         if args.run_file is not None:
             suite = use_saved_runs(suite, json.loads(args.run_file.read_text(encoding="utf-8")))
         judge = None
@@ -124,7 +165,10 @@ def main(argv=None):
 
     if args.report is not None:
         try:
-            if args.report.exists() and args.suite.exists() and args.report.samefile(args.suite):
+            if args.dataset and args.report.resolve().is_relative_to(args.dataset.resolve()):
+                print("Report path must be outside the active dataset", file=sys.stderr)
+                return 2
+            if args.report.exists() and args.suite and args.suite.exists() and args.report.samefile(args.suite):
                 print("Report path refers to the input suite", file=sys.stderr)
                 return 2
             if args.report.exists() and args.run_file and args.run_file.exists() and args.report.samefile(args.run_file):
@@ -138,6 +182,8 @@ def main(argv=None):
 
     if "reason" in report:
         print(report["reason"], file=sys.stderr)
+    if report.get("source_balance", {}).get("warning"):
+        print(report["source_balance"]["warning"], file=sys.stderr)
     for case in report["cases"]:
         for metric, result in case["metrics"].items():
             print(f"{case['id']} | {metric} | {result['status']} | {result['reason']}")
