@@ -2,6 +2,8 @@
 
 Draft. Working repository name `agent-eval-harness`.
 
+Use the [build plan](build-plan.md) for implementation order, starter files, and acceptance tests for each roadmap issue.
+
 ## Purpose
 
 Build a public Python evaluation harness that runs selected metrics against an agent's responses and tool traces. The repository includes your own Python metric files so a reviewer can inspect the scoring logic, run an individual metric, or run a suite of metrics together in CI.
