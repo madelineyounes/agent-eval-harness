@@ -3,6 +3,7 @@ import json
 import sys
 from pathlib import Path
 
+from agent_eval.calibration import calibrate, draft_metric
 from agent_eval.captures import use_saved_runs
 from agent_eval.goldens import SPLITS, draft, load_dataset, promote, read
 from agent_eval.metrics import (
@@ -116,10 +117,33 @@ def golden_command(command, argv):
     return 0
 
 
+def calibration_command(command, argv):
+    parser = argparse.ArgumentParser(prog=f"python -m agent_eval {command}")
+    if command == "draft-metric":
+        parser.add_argument("--id", required=True)
+        parser.add_argument("--behavior", required=True)
+        parser.add_argument("--tool", required=True)
+        parser.add_argument("--output", type=Path, required=True)
+    else:
+        parser.add_argument("--labels", type=Path, required=True)
+    args = parser.parse_args(argv)
+    try:
+        if command == "draft-metric":
+            print(draft_metric(args.output, args.id, args.behavior, args.tool))
+        else:
+            print(json.dumps(calibrate(read(args.labels)), indent=2))
+    except (OSError, ValueError) as error:
+        print(error, file=sys.stderr)
+        return 2
+    return 0
+
+
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
     if argv and argv[0] in ("draft-goldens", "promote"):
         return golden_command(argv[0], argv[1:])
+    if argv and argv[0] in ("draft-metric", "calibrate-metric"):
+        return calibration_command(argv[0], argv[1:])
     parser = argparse.ArgumentParser(description="Evaluate captured coding-agent and PR review runs.")
     parser.add_argument("--list-metrics", action="store_true", help="List metric IDs and exit.")
     inputs = parser.add_mutually_exclusive_group()

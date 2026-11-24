@@ -75,6 +75,8 @@ The [synthetic judge report](examples/judge-v1/report.json) shows per-repeat sco
 
 Replay the [starter golden dataset](datasets/goldens) or point `--dataset` at a private checkout. The [golden dataset guide](docs/golden-datasets.md) covers source balance, candidate generation, and reviewable promotion proposals.
 
+Use the [metric calibration guide](docs/metric-calibration.md) to create a draft evaluator and compare its scores against development and held-out labels.
+
 The current CLI scores captured verifier outcomes. The [spec](docs/spec.md) describes agent execution, trace metrics, reporting, and golden promotion.
 
 ## Contributing
